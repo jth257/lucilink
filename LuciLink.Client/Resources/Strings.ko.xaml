@@ -1,0 +1,64 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=mscorlib">
+
+    <!-- ===== 로그인 화면 ===== -->
+    <sys:String x:Key="App.Name">LuciLink</sys:String>
+    <sys:String x:Key="Login.Title">로그인</sys:String>
+    <sys:String x:Key="Login.Subtitle">계정에 로그인하여 시작하세요</sys:String>
+    <sys:String x:Key="Login.Id">이메일</sys:String>
+    <sys:String x:Key="Login.Password">비밀번호</sys:String>
+    <sys:String x:Key="Login.Button">로그인</sys:String>
+    <sys:String x:Key="Login.Or">또는</sys:String>
+    <sys:String x:Key="Login.Signup">회원가입</sys:String>
+    <sys:String x:Key="Login.ForgotPassword">비밀번호를 잊으셨나요?</sys:String>
+    <sys:String x:Key="Login.Error.Empty">아이디와 비밀번호를 입력하세요.</sys:String>
+    <sys:String x:Key="Login.Error.Invalid">아이디 또는 비밀번호가 올바르지 않습니다.</sys:String>
+    <sys:String x:Key="Login.Banner.Tagline">Android Testing&#x0a;Made Simple</sys:String>
+    <sys:String x:Key="Login.Banner.Feature">⚡ USB로 빠르고 안전한&#x0a;    Android 원격 제어</sys:String>
+
+    <!-- ===== 메인 화면 ===== -->
+    <sys:String x:Key="Status.Connected">연결됨</sys:String>
+    <sys:String x:Key="Status.Disconnected">연결 안됨</sys:String>
+    <sys:String x:Key="Button.Connect">연결</sys:String>
+    <sys:String x:Key="Button.Disconnect">연결 해제</sys:String>
+    <sys:String x:Key="Status.Reconnecting">재연결 시도 중...</sys:String>
+
+    <!-- ===== 플레이스홀더 ===== -->
+    <sys:String x:Key="Placeholder.Title">스트리밍 준비</sys:String>
+    <sys:String x:Key="Placeholder.Line1">USB로 Android 기기를 연결하고</sys:String>
+    <sys:String x:Key="Placeholder.Line2">아래 연결 버튼을 누르세요</sys:String>
+
+    <!-- ===== 오버레이 ===== -->
+    <sys:String x:Key="Drop.Title">APK 파일 설치</sys:String>
+    <sys:String x:Key="Drop.Subtitle">파일을 놓으면 설치가 시작됩니다</sys:String>
+    <sys:String x:Key="Install.Status">설치 중...</sys:String>
+
+    <!-- ===== 툴바 ===== -->
+    <sys:String x:Key="Tool.Capture">📷 캡처</sys:String>
+    <sys:String x:Key="Tool.Report">📋 리포트</sys:String>
+    <sys:String x:Key="Tool.Log">📝 로그</sys:String>
+
+    <!-- ===== 프로필 ===== -->
+    <sys:String x:Key="Profile.SubStatus">구독 상태</sys:String>
+    <sys:String x:Key="Profile.TrialPeriod">체험 기간</sys:String>
+    <sys:String x:Key="Profile.DaysLeft">일 남음</sys:String>
+    <sys:String x:Key="Profile.CurrentPlan">현재 플랜</sys:String>
+    <sys:String x:Key="Profile.Subscribe">Pro 구독하기</sys:String>
+    <sys:String x:Key="Profile.Logout">로그아웃</sys:String>
+    <sys:String x:Key="Profile.Subscribed">Pro 구독중</sys:String>
+    <sys:String x:Key="Profile.Trial">체험판 사용중</sys:String>
+    <sys:String x:Key="Profile.Expired">체험 기간 만료</sys:String>
+    <sys:String x:Key="Profile.PlanExpired">만료됨</sys:String>
+    <sys:String x:Key="Profile.Tooltip">프로필</sys:String>
+
+    <!-- ===== 메시지 ===== -->
+    <sys:String x:Key="Msg.NoDevice">USB로 연결된 기기가 없습니다.&#x0a;USB 디버깅이 켜져 있는지 확인하세요.</sys:String>
+    <sys:String x:Key="Msg.Disconnected">기기 연결이 끊어졌습니다.&#x0a;USB 케이블을 확인하고 다시 연결하세요.</sys:String>
+    <sys:String x:Key="Msg.DisconnectedTitle">연결 끊김</sys:String>
+    <sys:String x:Key="Msg.BrowserError">웹 브라우저를 열 수 없습니다.</sys:String>
+
+    <!-- ===== 언어 설정 ===== -->
+    <sys:String x:Key="Lang.Current">한국어</sys:String>
+    <sys:String x:Key="Lang.Switch">English</sys:String>
+</ResourceDictionary>

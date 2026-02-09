@@ -1,0 +1,773 @@
+<Window x:Class="LuciLink.Client.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:LuciLink.Client"
+        mc:Ignorable="d"
+        Title="{Binding WindowTitle}" Height="900" Width="460"
+        MinWidth="400" MinHeight="600"
+        Background="Transparent" WindowStartupLocation="CenterScreen"
+        WindowStyle="None" AllowsTransparency="True"
+        ResizeMode="CanResizeWithGrip">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="40" ResizeBorderThickness="6"
+                      GlassFrameThickness="0" CornerRadius="12"/>
+    </WindowChrome.WindowChrome>
+
+    <Window.Resources>
+        <!-- ===== 색상 팔레트 (Premium Indigo Theme) ===== -->
+        <Color x:Key="AccentColor">#3F51B5</Color>
+        <Color x:Key="AccentDarkColor">#303F9F</Color>
+        <Color x:Key="AccentLightColor">#C5CAE9</Color>
+        <Color x:Key="AccentHoverColor">#5C6BC0</Color>
+        <Color x:Key="SurfaceColor">#F5F5F7</Color>
+        <Color x:Key="SurfaceLightColor">#FFFFFF</Color>
+        <Color x:Key="BorderColor">#E8E8ED</Color>
+        <Color x:Key="TextPrimaryColor">#1D1D1F</Color>
+        <Color x:Key="TextSecondaryColor">#86868B</Color>
+        <Color x:Key="SuccessColor">#34C759</Color>
+        <Color x:Key="DangerColor">#FF3B30</Color>
+        <Color x:Key="WarningColor">#FF9500</Color>
+
+        <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
+        <SolidColorBrush x:Key="AccentDarkBrush" Color="{StaticResource AccentDarkColor}"/>
+        <SolidColorBrush x:Key="AccentLightBrush" Color="{StaticResource AccentLightColor}"/>
+        <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHoverColor}"/>
+        <SolidColorBrush x:Key="SurfaceBrush" Color="{StaticResource SurfaceColor}"/>
+        <SolidColorBrush x:Key="SurfaceLightBrush" Color="{StaticResource SurfaceLightColor}"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="{StaticResource BorderColor}"/>
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}"/>
+        <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
+        <SolidColorBrush x:Key="DangerBrush" Color="{StaticResource DangerColor}"/>
+
+        <!-- ===== 그림자 효과 ===== -->
+        <DropShadowEffect x:Key="Shadow1" BlurRadius="8" ShadowDepth="2" Opacity="0.08" Direction="270"/>
+        <DropShadowEffect x:Key="Shadow2" BlurRadius="16" ShadowDepth="4" Opacity="0.12" Direction="270"/>
+        <DropShadowEffect x:Key="Shadow3" BlurRadius="24" ShadowDepth="6" Opacity="0.16" Direction="270"/>
+
+        <!-- ===== 타이틀바 버튼 스타일 ===== -->
+        <Style x:Key="CaptionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="#86868B"/>
+            <Setter Property="Width" Value="46"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#0A000000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="CloseButtonStyle" TargetType="Button" BasedOn="{StaticResource CaptionButtonStyle}">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#E81123"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== 입력 필드 스타일 ===== -->
+        <Style x:Key="InputFieldStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, sans-serif"/>
+            <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="bd" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="PasswordFieldStyle" TargetType="PasswordBox">
+            <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Padding" Value="14,12"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, sans-serif"/>
+            <Setter Property="CaretBrush" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="PasswordBox">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="{StaticResource AccentBrush}"/>
+                                <Setter TargetName="bd" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== 네비게이션 버튼 스타일 ===== -->
+        <Style x:Key="NavButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Height" Value="44"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="Transparent" CornerRadius="12" Padding="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#08000000"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#14000000"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== 툴바 버튼 스타일 ===== -->
+        <Style x:Key="ToolButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource SurfaceLightBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, sans-serif"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Padding" Value="16,6"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#08000000"/>
+                                <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentBrush}"/>
+                                <Setter Property="Foreground" Value="White"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== 메인 연결 버튼 스타일 ===== -->
+        <Style x:Key="ConnectButtonStyle" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, sans-serif"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="32,8"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="10" Padding="{TemplateBinding Padding}"
+                                Background="{StaticResource AccentBrush}" BorderThickness="0">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.25" 
+                                                  Color="{StaticResource AccentColor}" Direction="270"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="{StaticResource AccentDarkBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="bd" Property="Background" Value="#E0E0E5"/>
+                                <Setter TargetName="bd" Property="Effect" Value="{x:Null}"/>
+                                <Setter Property="Foreground" Value="#AEAEB2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== 링크 버튼 스타일 ===== -->
+        <Style x:Key="LinkButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, sans-serif"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <TextBlock x:Name="tb" Text="{TemplateBinding Content}" 
+                                   Foreground="{TemplateBinding Foreground}" FontSize="{TemplateBinding FontSize}"
+                                   HorizontalAlignment="Center" FontWeight="Medium"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="tb" Property="TextDecorations" Value="Underline"/>
+                                <Setter TargetName="tb" Property="Foreground" Value="{StaticResource AccentHoverBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- ===== 언어 전환 버튼 스타일 ===== -->
+        <Style x:Key="LangButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#44FFFFFF"/>
+            <Setter Property="Foreground" Value="#CCFFFFFF"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="10"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, sans-serif"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="WindowChrome.IsHitTestVisibleInChrome" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="6" Padding="8,3">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#22FFFFFF"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- ===== 루트: 둥근 모서리 클리핑 ===== -->
+    <Border CornerRadius="12" Background="#303F9F">
+        <Border.Clip>
+            <RectangleGeometry RadiusX="12" RadiusY="12">
+                <RectangleGeometry.Rect>
+                    <MultiBinding Converter="{x:Static local:RectConverter.Instance}">
+                        <Binding Path="ActualWidth" RelativeSource="{RelativeSource AncestorType=Border}"/>
+                        <Binding Path="ActualHeight" RelativeSource="{RelativeSource AncestorType=Border}"/>
+                    </MultiBinding>
+                </RectangleGeometry.Rect>
+            </RectangleGeometry>
+        </Border.Clip>
+
+        <Grid>
+            <!-- ===== 메인 화면 (로그인 후) ===== -->
+            <Grid x:Name="MainPanel" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="40"/>  <!-- 커스텀 타이틀바 -->
+                    <RowDefinition Height="Auto"/> <!-- 상단 상태바 -->
+                    <RowDefinition Height="*"/>    <!-- 비디오 -->
+                    <RowDefinition Height="Auto"/> <!-- 네비바 -->
+                    <RowDefinition Height="Auto"/> <!-- 툴바 -->
+                </Grid.RowDefinitions>
+
+                <!-- ===== 커스텀 타이틀바 ===== -->
+                <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource BorderBrush}" 
+                        BorderThickness="0,0,0,1">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- 앱 아이콘 + 이름 -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center" Margin="14,0,0,0">
+                            <Ellipse Width="8" Height="8" Fill="{StaticResource AccentBrush}" Margin="0,0,8,0"/>
+                            <TextBlock Text="{DynamicResource App.Name}" FontSize="13" FontWeight="SemiBold" 
+                                       Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                        </StackPanel>
+
+                        <!-- 언어 전환 + 윈도우 컨트롤 -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                            <Button Content="{DynamicResource Lang.Switch}" Command="{Binding ToggleLanguageCommand}" 
+                                    Background="Transparent" BorderBrush="{StaticResource BorderBrush}" 
+                                    BorderThickness="1" Foreground="{StaticResource TextSecondaryBrush}"
+                                    FontSize="10" FontFamily="Segoe UI Variable, Segoe UI, sans-serif" 
+                                    FontWeight="Medium" Cursor="Hand" Padding="8,3" Margin="0,0,4,0"
+                                    WindowChrome.IsHitTestVisibleInChrome="True">
+                                <Button.Template>
+                                    <ControlTemplate TargetType="Button">
+                                        <Border x:Name="bd" Background="Transparent" 
+                                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" 
+                                                CornerRadius="6" Padding="8,3">
+                                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                        </Border>
+                                        <ControlTemplate.Triggers>
+                                            <Trigger Property="IsMouseOver" Value="True">
+                                                <Setter TargetName="bd" Property="Background" Value="#08000000"/>
+                                            </Trigger>
+                                        </ControlTemplate.Triggers>
+                                    </ControlTemplate>
+                                </Button.Template>
+                            </Button>
+                            <Button Content="─" Style="{StaticResource CaptionButtonStyle}" Click="OnMinimize"/>
+                            <Button Content="□" Style="{StaticResource CaptionButtonStyle}" Click="OnMaximize"/>
+                            <Button Content="✕" Style="{StaticResource CloseButtonStyle}" Click="OnClose"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- ===== 상단 상태바 ===== -->
+                <Border Grid.Row="1" Background="White" Padding="16,10">
+                    <Border.Effect>
+                        <DropShadowEffect BlurRadius="6" ShadowDepth="1" Opacity="0.04" Direction="270"/>
+                    </Border.Effect>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- 기기 정보 -->
+                        <TextBlock Grid.Column="0" Text="{Binding DeviceInfoText}" 
+                                   FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
+                                   FontFamily="Segoe UI Variable, Segoe UI, sans-serif"
+                                   VerticalAlignment="Center"/>
+
+                        <!-- 연결 상태 인디케이터 -->
+                        <Border Grid.Column="2" Background="#F5F5F7" CornerRadius="12" Padding="10,4" Margin="0,0,8,0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse Width="7" Height="7" Fill="{Binding StatusColor}" Margin="0,0,6,0"/>
+                                <TextBlock Text="{Binding StatusText}" 
+                                           FontSize="11" FontWeight="Medium"
+                                           Foreground="{StaticResource TextSecondaryBrush}" VerticalAlignment="Center"
+                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 프로필 버튼 -->
+                        <Button Grid.Column="3" Command="{Binding Profile.TogglePanelCommand}" Style="{StaticResource NavButtonStyle}" 
+                                Height="32" Width="32" ToolTip="{DynamicResource Profile.Tooltip}">
+                            <Grid>
+                                <Ellipse Width="28" Height="28" Fill="{StaticResource AccentLightBrush}"/>
+                                <TextBlock Text="U" FontSize="12" FontWeight="SemiBold" 
+                                           Foreground="{StaticResource AccentBrush}"
+                                           HorizontalAlignment="Center" VerticalAlignment="Center"
+                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                            </Grid>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- ===== 비디오 영역 ===== -->
+                <Border Grid.Row="2" Background="#0A0A0A">
+                    <Grid>
+                        <Image x:Name="VideoImage" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"
+                               AllowDrop="True" DragEnter="OnDragEnter" DragLeave="OnDragLeave" Drop="OnDrop"/>
+
+                        <!-- 연결 전 안내 (플레이스홀더) -->
+                        <StackPanel x:Name="PlaceholderPanel" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                    Visibility="{Binding IsPlaceholderVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
+                            <Border Background="#1A1A1E" CornerRadius="20" Width="72" Height="72" 
+                                    HorizontalAlignment="Center" Margin="0,0,0,20">
+                                <Path Data="M12,2 L12,6 M8,6 L16,6 L16,9 C16,10.1 15.1,11 14,11 L13,11 L13,14 C14.7,14 16,15.3 16,17 L16,20 C16,21.1 15.1,22 14,22 L10,22 C8.9,22 8,21.1 8,20 L8,17 C8,15.3 9.3,14 11,14 L11,11 L10,11 C8.9,11 8,10.1 8,9 L8,6"
+                                      Stroke="#666666" StrokeThickness="1.5" 
+                                      StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                      Width="24" Height="24" Stretch="Uniform" VerticalAlignment="Center" HorizontalAlignment="Center"/>
+                            </Border>
+                            <TextBlock Text="{DynamicResource Placeholder.Title}" FontSize="16" FontWeight="SemiBold" 
+                                       Foreground="#888888" HorizontalAlignment="Center"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                            <TextBlock Text="{DynamicResource Placeholder.Line1}" FontSize="12" 
+                                       Foreground="#555555" HorizontalAlignment="Center" Margin="0,10,0,0"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                            <TextBlock Text="{DynamicResource Placeholder.Line2}" FontSize="12" 
+                                       Foreground="#555555" HorizontalAlignment="Center" Margin="0,4,0,0"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                        </StackPanel>
+
+                        <!-- APK 드롭 오버레이 -->
+                        <Border x:Name="DropOverlay" Background="#CC000000" 
+                                Visibility="{Binding IsDropOverlayVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}" 
+                                IsHitTestVisible="False">
+                            <Border BorderBrush="{StaticResource AccentBrush}" BorderThickness="2" CornerRadius="16"
+                                    Margin="28" VerticalAlignment="Center" HorizontalAlignment="Center" 
+                                    Background="#22FFFFFF">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="20" ShadowDepth="0" Opacity="0.3" 
+                                                      Color="{StaticResource AccentColor}"/>
+                                </Border.Effect>
+                                <StackPanel Margin="48,32">
+                                    <TextBlock Text="📦" FontSize="32" HorizontalAlignment="Center" Margin="0,0,0,12"/>
+                                    <TextBlock Text="{DynamicResource Drop.Title}" FontSize="18" Foreground="White" 
+                                               HorizontalAlignment="Center" FontWeight="SemiBold"
+                                               FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                    <TextBlock Text="{DynamicResource Drop.Subtitle}" FontSize="12" 
+                                               Foreground="#AAAAAA" 
+                                               HorizontalAlignment="Center" Margin="0,8,0,0"
+                                               FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                </StackPanel>
+                            </Border>
+                        </Border>
+
+                        <!-- 설치 진행 오버레이 -->
+                        <Border x:Name="InstallOverlay" Background="#CC000000" 
+                                Visibility="{Binding IsInstallOverlayVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}" 
+                                IsHitTestVisible="False">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <ProgressBar x:Name="InstallProgress" IsIndeterminate="True" 
+                                             Width="240" Height="3" Foreground="{StaticResource AccentBrush}" 
+                                             Background="#333333"/>
+                                <TextBlock Text="{Binding InstallStatusText}" FontSize="13" 
+                                           Foreground="White" FontWeight="Medium"
+                                           HorizontalAlignment="Center" Margin="0,16,0,0"
+                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- 로그 오버레이 -->
+                        <Border VerticalAlignment="Top" HorizontalAlignment="Left" Margin="10" 
+                                Background="#E6000000" CornerRadius="10" Padding="4"
+                                Visibility="{Binding IsLogVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="12" ShadowDepth="2" Opacity="0.3" Direction="270"/>
+                            </Border.Effect>
+                            <TextBox x:Name="LogTextBox" Text="{Binding LogText, Mode=OneWay}"
+                                     Background="Transparent" Foreground="#CCCCCC" BorderThickness="0" 
+                                     FontSize="10" FontFamily="Cascadia Code, Consolas, Courier New"
+                                     IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                                     Height="160" Width="290" Padding="10,8"
+                                     Visibility="{Binding IsLogVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
+                        </Border>
+
+                        <!-- ===== 프로필 패널 오버레이 ===== -->
+                        <Border x:Name="ProfilePanel" Background="#CC000000" 
+                                Visibility="{Binding Profile.IsPanelVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
+                            <Border Background="White" CornerRadius="20" 
+                                    Margin="24" Padding="32,28" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                    MinWidth="320">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="30" ShadowDepth="8" Opacity="0.2" Direction="270"/>
+                                </Border.Effect>
+                                <StackPanel>
+                                    <!-- 프로필 아이콘 (이니셜) -->
+                                    <Grid HorizontalAlignment="Center" Margin="0,0,0,18">
+                                        <Ellipse Width="72" Height="72">
+                                            <Ellipse.Fill>
+                                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                    <GradientStop Color="#5C6BC0" Offset="0"/>
+                                                    <GradientStop Color="#3F51B5" Offset="1"/>
+                                                </LinearGradientBrush>
+                                            </Ellipse.Fill>
+                                        </Ellipse>
+                                        <TextBlock Text="T" FontSize="28" FontWeight="SemiBold" Foreground="White"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                   FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                    </Grid>
+
+                                    <TextBlock Text="{Binding Profile.UserName}" FontSize="20" FontWeight="SemiBold"
+                                               Foreground="{StaticResource TextPrimaryBrush}" HorizontalAlignment="Center"
+                                               FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                    <TextBlock Text="{Binding Profile.Email}" FontSize="12"
+                                               Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center"
+                                               Margin="0,4,0,24"
+                                               FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+
+                                    <!-- 구독 상태 카드 -->
+                                    <Border Background="#FAFAFA" CornerRadius="14" Padding="18,16"
+                                            Margin="0,0,0,10">
+                                        <StackPanel>
+                                            <TextBlock Text="{DynamicResource Profile.SubStatus}" FontSize="11" FontWeight="Medium"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       Margin="0,0,0,8"
+                                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <Ellipse Width="8" Height="8" Fill="{Binding Profile.SubStatusColor}" 
+                                                         Margin="0,0,8,0" VerticalAlignment="Center"/>
+                                                <TextBlock Text="{Binding Profile.SubStatusText}" 
+                                                           FontSize="15" FontWeight="SemiBold"
+                                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- 체험 기간 카드 -->
+                                    <Border Background="#FAFAFA" CornerRadius="14" 
+                                            Padding="18,16" Margin="0,0,0,10"
+                                            Visibility="{Binding Profile.IsTrialCardVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
+                                        <StackPanel>
+                                            <TextBlock Text="{DynamicResource Profile.TrialPeriod}" FontSize="11" FontWeight="Medium"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       Margin="0,0,0,8"
+                                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                            <StackPanel Orientation="Horizontal">
+                                                <TextBlock Text="{Binding Profile.TrialDaysLeft}" FontSize="32" FontWeight="Bold"
+                                                           Foreground="{StaticResource AccentBrush}"
+                                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                                <TextBlock Text="{DynamicResource Profile.DaysLeft}" FontSize="14" 
+                                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                                           VerticalAlignment="Bottom" Margin="8,0,0,5"
+                                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                            </StackPanel>
+                                            <Border Background="#E8E8ED" CornerRadius="4" Height="6" Margin="0,12,0,0">
+                                                <Border Background="{StaticResource AccentBrush}" 
+                                                        CornerRadius="4" Height="6" HorizontalAlignment="Left" 
+                                                        Width="{Binding Profile.TrialProgress, Converter={x:Static local:ProgressToWidthConverter.Instance}}"/>
+                                            </Border>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- 플랜 정보 카드 -->
+                                    <Border Background="#FAFAFA" CornerRadius="14" Padding="18,16"
+                                            Margin="0,0,0,24">
+                                        <StackPanel>
+                                            <TextBlock Text="{DynamicResource Profile.CurrentPlan}" FontSize="11" FontWeight="Medium"
+                                                       Foreground="{StaticResource TextSecondaryBrush}"
+                                                       Margin="0,0,0,8"
+                                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                            <TextBlock Text="{Binding Profile.PlanName}" FontSize="15" FontWeight="SemiBold"
+                                                       Foreground="{StaticResource TextPrimaryBrush}"
+                                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- 구독하기 버튼 -->
+                                    <Button Content="{DynamicResource Profile.Subscribe}" 
+                                            Command="{Binding Profile.SubscribeCommand}" Foreground="White" 
+                                            Style="{StaticResource ConnectButtonStyle}" 
+                                            Padding="0,12" Margin="0,0,0,12" HorizontalAlignment="Stretch"
+                                            Visibility="{Binding Profile.IsSubscribeVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
+
+                                    <!-- 로그아웃 -->
+                                    <Button Content="{DynamicResource Profile.Logout}" Click="OnLogout" 
+                                            Style="{StaticResource LinkButtonStyle}"
+                                            Foreground="{StaticResource DangerBrush}" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </Border>
+                    </Grid>
+                </Border>
+
+                <!-- ===== 네비게이션 바 ===== -->
+                <Border Grid.Row="3" Background="White" 
+                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="0,2">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button Grid.Column="0" Command="{Binding NavBackCommand}" Style="{StaticResource NavButtonStyle}">
+                            <Path Data="M14,4 L6,12 L14,20" Stroke="#86868B" StrokeThickness="2" 
+                                  StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                                  Width="20" Height="24" Stretch="Uniform"/>
+                        </Button>
+                        <Button Grid.Column="1" Command="{Binding NavHomeCommand}" Style="{StaticResource NavButtonStyle}">
+                            <Ellipse Width="18" Height="18" Stroke="#86868B" StrokeThickness="2" Fill="Transparent"/>
+                        </Button>
+                        <Button Grid.Column="2" Command="{Binding NavRecentCommand}" Style="{StaticResource NavButtonStyle}">
+                            <Rectangle Width="15" Height="15" Stroke="#86868B" StrokeThickness="2" 
+                                       RadiusX="3" RadiusY="3" Fill="Transparent"/>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <!-- ===== 하단 툴바 ===== -->
+                <Border Grid.Row="4" Background="White" 
+                        BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0" Padding="8,10">
+                    <DockPanel LastChildFill="False">
+                        <Button DockPanel.Dock="Left" Command="{Binding CaptureScreenCommand}" Content="{DynamicResource Tool.Capture}" 
+                                Style="{StaticResource ToolButtonStyle}" Margin="0,0,4,0"/>
+                        <Button DockPanel.Dock="Left" Command="{Binding CopyReportCommand}" Content="{DynamicResource Tool.Report}" 
+                                Style="{StaticResource ToolButtonStyle}" Margin="0,0,4,0"/>
+                        <Button DockPanel.Dock="Right" Command="{Binding ToggleLogCommand}" Content="{DynamicResource Tool.Log}" 
+                                Style="{StaticResource ToolButtonStyle}" Margin="4,0,0,0"/>
+                        <Button Content="{Binding ConnectButtonText}" 
+                                Command="{Binding ConnectToggleCommand}" Foreground="White"
+                                IsEnabled="{Binding CanConnect}"
+                                Style="{StaticResource ConnectButtonStyle}" 
+                                HorizontalAlignment="Center" Margin="4,0"/>
+                    </DockPanel>
+                </Border>
+            </Grid>
+
+            <!-- ===== 로그인 화면 ===== -->
+            <Grid x:Name="LoginPanel" Visibility="Visible">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="2*"/>
+                    <ColumnDefinition Width="3*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- 좌측: Indigo 그라데이션 배너 -->
+                <Border Grid.Column="0">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#303F9F" Offset="0"/>
+                            <GradientStop Color="#5C6BC0" Offset="0.5"/>
+                            <GradientStop Color="#7986CB" Offset="1"/>
+                        </LinearGradientBrush>
+                    </Border.Background>
+                    <Grid>
+                        <!-- 좌측 상단 언어 전환 버튼 -->
+                        <Button Content="{DynamicResource Lang.Switch}" 
+                                Command="{Binding ToggleLanguageCommand}" Style="{StaticResource LangButtonStyle}"
+                                HorizontalAlignment="Left" VerticalAlignment="Top" Margin="12,10,0,0"/>
+
+                        <StackPanel VerticalAlignment="Center" Margin="16,0">
+                            <Ellipse Width="12" Height="12" Fill="White" Opacity="0.8" HorizontalAlignment="Left"
+                                     Margin="0,0,0,16"/>
+                            <TextBlock Text="{DynamicResource App.Name}" FontSize="24" FontWeight="Bold" Foreground="White"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                            <TextBlock Text="{DynamicResource Login.Banner.Tagline}" FontSize="12" Foreground="#C5CAE9" 
+                                       Margin="0,8,0,0" LineHeight="18"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                            <Border Background="#22FFFFFF" CornerRadius="8" Padding="10,8" Margin="0,24,0,0">
+                                <TextBlock Text="{DynamicResource Login.Banner.Feature}" FontSize="11" 
+                                           Foreground="#E8EAF6" LineHeight="16" TextWrapping="Wrap"
+                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 우측: 로그인 폼 -->
+                <Border Grid.Column="1" Background="White">
+                    <Grid>
+                        <!-- 타이틀바 영역 (윈도우 컨트롤) -->
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Panel.ZIndex="1">
+                            <Button Content="─" Style="{StaticResource CaptionButtonStyle}" Click="OnMinimize"/>
+                            <Button Content="□" Style="{StaticResource CaptionButtonStyle}" Click="OnMaximize"/>
+                            <Button Content="✕" Style="{StaticResource CloseButtonStyle}" Click="OnClose"/>
+                        </StackPanel>
+
+                        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"
+                                      Padding="0,40,0,0">
+                            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" 
+                                        Width="260" Margin="0,20,0,20">
+                                <TextBlock Text="{DynamicResource Login.Title}" FontSize="24" FontWeight="Bold" 
+                                           Foreground="{StaticResource TextPrimaryBrush}"
+                                           Margin="0,0,0,6"
+                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                <TextBlock Text="{DynamicResource Login.Subtitle}" FontSize="12" 
+                                           Foreground="{StaticResource TextSecondaryBrush}"
+                                           Margin="0,0,0,32"
+                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+
+                                <TextBlock Text="{DynamicResource Login.Id}" FontSize="12" FontWeight="Medium"
+                                           Foreground="{StaticResource TextSecondaryBrush}" 
+                                           Margin="2,0,0,6"
+                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                <TextBox x:Name="LoginIdBox" Style="{StaticResource InputFieldStyle}" 
+                                         Margin="0,0,0,16"/>
+
+                                <TextBlock Text="{DynamicResource Login.Password}" FontSize="12" FontWeight="Medium"
+                                           Foreground="{StaticResource TextSecondaryBrush}" 
+                                           Margin="2,0,0,6"
+                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                <PasswordBox x:Name="LoginPwBox" Style="{StaticResource PasswordFieldStyle}" 
+                                             Margin="0,0,0,4"/>
+
+                                <TextBlock HorizontalAlignment="Right" Margin="0,0,2,12">
+                                    <Hyperlink NavigateUri="https://lucitella.com/forgot-password" 
+                                               RequestNavigate="OnHyperlinkNavigate"
+                                               Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"
+                                               TextDecorations="None">
+                                        <Run Text="{DynamicResource Login.ForgotPassword}"/>
+                                    </Hyperlink>
+                                </TextBlock>
+
+                                <TextBlock Text="{Binding Login.ErrorText}" FontSize="11" Foreground="{StaticResource DangerBrush}"
+                                           HorizontalAlignment="Center" Margin="0,0,0,16"
+                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+
+                                <Button Content="{DynamicResource Login.Button}" Click="OnLogin" Foreground="White"
+                                        Style="{StaticResource ConnectButtonStyle}" 
+                                        Padding="0,14" HorizontalAlignment="Stretch" Margin="0,0,0,20"/>
+
+                                <!-- 구분선 -->
+                                <Grid Margin="0,0,0,20">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" 
+                                            VerticalAlignment="Center" Margin="0,0,12,0"/>
+                                    <TextBlock Grid.Column="1" Text="{DynamicResource Login.Or}" FontSize="11" 
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                    <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1" 
+                                            VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                </Grid>
+
+                                <Button Content="{DynamicResource Login.Signup}" Command="{Binding Login.SignupCommand}" Style="{StaticResource LinkButtonStyle}"/>
+                            </StackPanel>
+                        </ScrollViewer>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</Window>

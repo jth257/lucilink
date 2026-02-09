@@ -1,0 +1,29 @@
+# Large binary files (included via build process, not git)
+*.dll
+*.exe
+*.jar
+
+# Build outputs
+bin/
+obj/
+publish/
+releases/
+
+# IDE
+.vs/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# NuGet
+packages/
+*.nupkg
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Sensitive files
+*.env
+.env.local
