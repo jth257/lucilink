@@ -48,17 +48,7 @@ CREATE TABLE public.device_fingerprints (
 -- 같은 기기에서 같은 제품 중복 등록 방지
 CREATE UNIQUE INDEX idx_device_product ON public.device_fingerprints(device_hash, product_id);
 
--- ===== 4. 앱 버전 관리 테이블 (자동 업데이트용) =====
-CREATE TABLE public.app_versions (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id UUID NOT NULL REFERENCES public.products(id),
-  version TEXT NOT NULL,                  -- '1.1.0'
-  min_supported_version TEXT,             -- 강제 업데이트 기준 버전
-  download_url TEXT,
-  release_notes TEXT,
-  is_latest BOOLEAN NOT NULL DEFAULT false,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+-- (app_versions 테이블 제거됨 — 업데이트는 GitHub Releases로 관리)
 
 -- ===== 5. RLS (Row Level Security) 정책 =====
 
@@ -88,11 +78,6 @@ CREATE POLICY "Users can register own devices"
   ON public.device_fingerprints FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
--- app_versions: 누구나 조회 가능
-ALTER TABLE public.app_versions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Anyone can view app versions"
-  ON public.app_versions FOR SELECT
-  USING (true);
 
 -- ===== 6. 회원가입 시 구독 레코드 생성 (체험은 WPF 앱 첫 로그인 시 활성화) =====
 CREATE OR REPLACE FUNCTION public.create_default_trial()

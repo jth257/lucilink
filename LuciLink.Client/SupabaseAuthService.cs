@@ -71,13 +71,22 @@ public class SupabaseAuthService
             var response = await Http.SendAsync(request);
             var json = await response.Content.ReadAsStringAsync();
 
+            System.Diagnostics.Debug.WriteLine($"[SUB] HTTP {(int)response.StatusCode}, Body: {json}");
+
             if (!response.IsSuccessStatusCode) return null;
 
             var subs = JsonSerializer.Deserialize<SubscriptionInfo[]>(json);
-            return subs?.FirstOrDefault(s => s.Products?.Slug == SupabaseConfig.ProductSlug);
+            if (subs != null)
+            {
+                foreach (var s in subs)
+                    System.Diagnostics.Debug.WriteLine($"[SUB] id={s.Id}, status={s.Status}, slug={s.Products?.Slug}");
+            }
+            // lucilink 또는 lucilink-yearly 모두 매칭
+            return subs?.FirstOrDefault(s => s.Products?.Slug != null && s.Products.Slug.StartsWith(SupabaseConfig.ProductSlug));
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Debug.WriteLine($"[SUB] Exception: {ex.Message}");
             return null;
         }
     }
@@ -121,6 +130,65 @@ public class SupabaseAuthService
         catch (Exception ex)
         {
             return new TrialActivationResult(false, ex.Message, null);
+        }
+    }
+
+    /// <summary>이메일/비밀번호 회원가입</summary>
+    public async Task<AuthResult> SignUpAsync(string email, string password)
+    {
+        var body = JsonSerializer.Serialize(new { email, password });
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"{SupabaseConfig.Url}/auth/v1/signup")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        request.Headers.Add("apikey", SupabaseConfig.AnonKey);
+
+        try
+        {
+            var response = await Http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var err = JsonSerializer.Deserialize<AuthError>(json);
+                return new AuthResult(false, err?.ErrorDescription ?? err?.Message ?? "Sign up failed");
+            }
+
+            return new AuthResult(true, null);
+        }
+        catch (HttpRequestException ex)
+        {
+            return new AuthResult(false, $"Network error: {ex.Message}");
+        }
+    }
+
+    /// <summary>비밀번호 재설정 이메일 발송</summary>
+    public async Task<AuthResult> ResetPasswordAsync(string email)
+    {
+        var body = JsonSerializer.Serialize(new { email });
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"{SupabaseConfig.Url}/auth/v1/recover")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        request.Headers.Add("apikey", SupabaseConfig.AnonKey);
+
+        try
+        {
+            var response = await Http.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                var err = JsonSerializer.Deserialize<AuthError>(json);
+                return new AuthResult(false, err?.ErrorDescription ?? err?.Message ?? "Reset failed");
+            }
+
+            return new AuthResult(true, null);
+        }
+        catch (HttpRequestException ex)
+        {
+            return new AuthResult(false, $"Network error: {ex.Message}");
         }
     }
 

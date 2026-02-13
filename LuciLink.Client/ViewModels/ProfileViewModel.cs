@@ -21,6 +21,7 @@ public class ProfileViewModel : ViewModelBase
     private bool _isSubscribeVisible;
     private bool _isPanelVisible;
     private bool _isTrialActivationVisible; // 체험 시작 확인 다이얼로그
+    private bool _isYearlyPlan;
 
     public string UserName
     {
@@ -88,11 +89,28 @@ public class ProfileViewModel : ViewModelBase
         set => SetProperty(ref _isTrialActivationVisible, value);
     }
 
+    public bool IsYearlyPlan
+    {
+        get => _isYearlyPlan;
+        set
+        {
+            SetProperty(ref _isYearlyPlan, value);
+            OnPropertyChanged(nameof(SelectedPlanSlug));
+        }
+    }
+
+    public string SelectedPlanSlug => _isYearlyPlan ? "lucilink-yearly" : "lucilink";
+
     public RelayCommand TogglePanelCommand { get; }
     public RelayCommand SubscribeCommand { get; }
     public RelayCommand LogoutCommand { get; }
+    public RelayCommand SelectMonthlyCommand { get; }
+    public RelayCommand SelectYearlyCommand { get; }
 
     public event Action? LogoutRequested;
+
+    /// <summary>구독 버튼 클릭 이벤트 (MainViewModel에서 폴링 간격 단축)</summary>
+    public event Action? SubscribeClicked;
 
     /// <summary>체험 활성화 요청 이벤트 (MainViewModel에서 처리)</summary>
     public event Func<Task>? TrialActivationRequested;
@@ -102,11 +120,14 @@ public class ProfileViewModel : ViewModelBase
         TogglePanelCommand = new RelayCommand(() => IsPanelVisible = !IsPanelVisible);
         SubscribeCommand = new RelayCommand(OnSubscribe);
         LogoutCommand = new RelayCommand(() => LogoutRequested?.Invoke());
+        SelectMonthlyCommand = new RelayCommand(() => IsYearlyPlan = false);
+        SelectYearlyCommand = new RelayCommand(() => IsYearlyPlan = true);
     }
 
     /// <summary>로그인 성공 시 프로필 업데이트</summary>
     public void SetUser(string name, string email, string subStatus, int trialDays)
     {
+        System.Diagnostics.Debug.WriteLine($"[PROFILE] SetUser called: name={name}, email={email}, subStatus={subStatus}, trialDays={trialDays}");
         UserName = name;
         Email = email;
         _subscriptionStatus = subStatus;
@@ -124,17 +145,13 @@ public class ProfileViewModel : ViewModelBase
     private async void ShowTrialActivationDialog()
     {
         var result = MessageBox.Show(
-            "지금부터 3일간의 무료 체험이 시작됩니다.\n\n" +
-            "체험 기간 동안 LuciLink의 모든 기능을 이용할 수 있습니다.\n" +
-            "체험 종료 후에는 구독이 필요합니다.\n\n" +
-            "계속하시겠습니까?",
-            "무료 체험 시작",
+            LocalizationManager.Get("Msg.TrialStartConfirm"),
+            LocalizationManager.Get("Msg.TrialStartTitle"),
             MessageBoxButton.YesNo,
             MessageBoxImage.Question);
 
         if (result == MessageBoxResult.Yes)
         {
-            // 체험 활성화 실행
             if (TrialActivationRequested != null)
             {
                 await TrialActivationRequested.Invoke();
@@ -142,11 +159,9 @@ public class ProfileViewModel : ViewModelBase
         }
         else
         {
-            // "나중에" 선택 — 앱은 사용 가능하지만 기능 제한 상태 유지
             MessageBox.Show(
-                "무료 체험은 나중에 다시 시작할 수 있습니다.\n" +
-                "현재 기기 연결 기능을 이용하시려면 체험을 시작해주세요.",
-                "알림",
+                LocalizationManager.Get("Msg.TrialLater"),
+                LocalizationManager.Get("Msg.Notice"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
         }
@@ -173,6 +188,14 @@ public class ProfileViewModel : ViewModelBase
                 IsSubscribeVisible = false;
                 break;
 
+            case "cancelled":
+                SubStatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFA726"));
+                SubStatusText = LocalizationManager.Get("Profile.Cancelled");
+                IsTrialCardVisible = false;
+                PlanName = "Pro Plan";
+                IsSubscribeVisible = true;
+                break;
+
             case "trial":
                 SubStatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6C5CE7"));
                 SubStatusText = LocalizationManager.Get("Profile.Trial");
@@ -185,10 +208,10 @@ public class ProfileViewModel : ViewModelBase
 
             case "pending":
                 SubStatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFA726"));
-                SubStatusText = "체험 대기";
+                SubStatusText = LocalizationManager.Get("Profile.TrialPending");
                 IsTrialCardVisible = true;
                 TrialDaysLeft = 3;
-                PlanName = "Free Trial (대기)";
+                PlanName = LocalizationManager.Get("Profile.PlanTrialPending");
                 IsSubscribeVisible = false;
                 TrialProgress = 1.0;
                 break;
@@ -202,6 +225,14 @@ public class ProfileViewModel : ViewModelBase
                 IsSubscribeVisible = true;
                 TrialProgress = 0;
                 break;
+
+            default:
+                SubStatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFA726"));
+                SubStatusText = LocalizationManager.Get("Profile.TrialPending");
+                IsTrialCardVisible = false;
+                PlanName = _subscriptionStatus;
+                IsSubscribeVisible = true;
+                break;
         }
     }
 
@@ -209,11 +240,16 @@ public class ProfileViewModel : ViewModelBase
     {
         try
         {
-            Process.Start(new ProcessStartInfo("https://lucitella.com/checkout?product=lucilink") { UseShellExecute = true });
+            var slug = SelectedPlanSlug;
+            var plan = IsYearlyPlan ? "yearly" : "monthly";
+            var provider = LocalizationManager.CurrentLanguage == "ko" ? "toss" : "lemonsqueezy";
+            var url = $"https://lucitella.com/checkout?product={slug}&plan={plan}&provider={provider}";
+            Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
+            SubscribeClicked?.Invoke();
         }
         catch
         {
-            MessageBox.Show(LocalizationManager.Get("Msg.BrowserError") + "\nhttps://lucitella.com/checkout?product=lucilink");
+            MessageBox.Show(LocalizationManager.Get("Msg.BrowserError"));
         }
     }
 }

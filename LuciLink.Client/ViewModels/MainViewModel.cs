@@ -73,6 +73,8 @@ public class MainViewModel : ViewModelBase
     // 자식 ViewModel
     public LoginViewModel Login { get; }
     public ProfileViewModel Profile { get; }
+    public SettingsViewModel Settings { get; }
+    private AppSettings _appSettings;
 
     #region Binding Properties
 
@@ -191,8 +193,10 @@ public class MainViewModel : ViewModelBase
         _server = new ScrcpyServer(_adb);
 
         _authService = new SupabaseAuthService();
+        _appSettings = AppSettings.Load();
         Login = new LoginViewModel(_authService);
         Profile = new ProfileViewModel();
+        Settings = new SettingsViewModel(_appSettings);
 
         // 로그인 성공 → 프로필 업데이트
         Login.LoginSucceeded += (name, email, subStatus, trialDays) =>
@@ -205,6 +209,9 @@ public class MainViewModel : ViewModelBase
 
         // 로그아웃
         Profile.LogoutRequested += OnLogout;
+
+        // 구독 클릭 → 폴링 간격 단축
+        Profile.SubscribeClicked += OnSubscribeClicked;
 
         // Commands
         ConnectToggleCommand = new AsyncRelayCommand(OnConnectToggle, () => CanConnect);
@@ -237,6 +244,20 @@ public class MainViewModel : ViewModelBase
         }, null, TimeSpan.FromMinutes(30), TimeSpan.FromMinutes(30));
     }
 
+    /// <summary>구독 버튼 클릭 → 5초 간격 폴링으로 단축, 60초 후 원래 30분으로 복원</summary>
+    private void OnSubscribeClicked()
+    {
+        Log("Subscribe clicked — polling interval shortened to 5s for 60s.");
+        _subscriptionCheckTimer?.Change(TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+
+        // 60초 후 원래 30분 간격으로 복원
+        Task.Delay(TimeSpan.FromSeconds(60)).ContinueWith(_ =>
+        {
+            _subscriptionCheckTimer?.Change(TimeSpan.FromMinutes(30), TimeSpan.FromMinutes(30));
+            Log("Polling interval restored to 30min.");
+        });
+    }
+
     /// <summary>앱 시작 시 백그라운드 업데이트 확인</summary>
     private async Task CheckForUpdatesAsync()
     {
@@ -249,9 +270,8 @@ public class MainViewModel : ViewModelBase
             if (updateInfo != null)
             {
                 var result = MessageBox.Show(
-                    $"새로운 업데이트가 있습니다.\n\n" +
-                    $"다운로드하고 설치하시겠습니까?",
-                    "업데이트 알림",
+                    LocalizationManager.Get("Msg.UpdateAvailable"),
+                    LocalizationManager.Get("Msg.UpdateTitle"),
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Information);
 
@@ -303,7 +323,7 @@ public class MainViewModel : ViewModelBase
 
     /// <summary>구독 상태 확인 — 기능 사용 가능 여부</summary>
     private bool CanUseApp =>
-        _currentSubStatus == "trial" || _currentSubStatus == "active" || _currentSubStatus == "subscribed";
+        _currentSubStatus == "trial" || _currentSubStatus == "active" || _currentSubStatus == "subscribed" || _currentSubStatus == "cancelled";
 
     private async Task ConnectAsync()
     {
@@ -311,9 +331,9 @@ public class MainViewModel : ViewModelBase
         if (!CanUseApp)
         {
             var msg = _currentSubStatus == "pending"
-                ? "무료 체험을 먼저 시작해주세요.\n프로필에서 '체험 시작'을 눌러주세요."
-                : "구독이 만료되었습니다.\n구독을 갱신하면 다시 이용할 수 있습니다.";
-            MessageBox.Show(msg, "기능 제한", MessageBoxButton.OK, MessageBoxImage.Warning);
+                ? LocalizationManager.Get("Msg.TrialRequired")
+                : LocalizationManager.Get("Msg.SubExpired");
+            MessageBox.Show(msg, LocalizationManager.Get("Msg.FeatureRestricted"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -500,10 +520,8 @@ public class MainViewModel : ViewModelBase
         {
             Log("Trial blocked: email not verified.");
             MessageBox.Show(
-                "이메일 인증이 필요합니다.\n\n" +
-                "회원가입 시 발송된 인증 메일을 확인해주세요.\n" +
-                "메일함에 없으면 스팸 폴더도 확인해주세요.",
-                "이메일 인증 필요",
+                LocalizationManager.Get("Msg.EmailVerifyRequired"),
+                LocalizationManager.Get("Msg.EmailVerifyTitle"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
             return;
@@ -525,16 +543,18 @@ public class MainViewModel : ViewModelBase
         {
             Log("Trial blocked: device already used for trial by another account.");
             MessageBox.Show(
-                "이 기기에서 이미 무료 체험을 사용한 기록이 있습니다.\n구독을 구매하시면 바로 이용 가능합니다.",
-                "무료 체험 불가",
+                LocalizationManager.Get("Msg.DeviceAlreadyUsed"),
+                LocalizationManager.Get("Msg.DeviceAlreadyUsedTitle"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
-            Profile.UpdateSubscriptionUI(); // 상태 유지 (pending)
+            Profile.UpdateSubscriptionUI();
         }
         else
         {
             Log($"Trial activation failed: {result.Status}");
-            MessageBox.Show($"체험 활성화에 실패했습니다.\n{result.Status}", "오류");
+            MessageBox.Show(
+                $"{LocalizationManager.Get("Msg.TrialActivationFailed")}\n{result.Status}",
+                LocalizationManager.Get("Msg.Error"));
         }
     }
 
@@ -741,13 +761,13 @@ public class MainViewModel : ViewModelBase
 
         if (apkFiles.Length == 0)
         {
-            MessageBox.Show(LocalizationManager.Get("Msg.ApkOnly") is string s && s != "[Msg.ApkOnly]" ? s : "APK 파일만 설치할 수 있습니다.");
+            MessageBox.Show(LocalizationManager.Get("Msg.ApkOnly"));
             return;
         }
 
         if (_deviceSerial == null)
         {
-            MessageBox.Show(LocalizationManager.Get("Msg.ConnectFirst") is string s && s != "[Msg.ConnectFirst]" ? s : "먼저 기기를 연결하세요.");
+            MessageBox.Show(LocalizationManager.Get("Msg.ConnectFirst"));
             return;
         }
 
@@ -762,7 +782,7 @@ public class MainViewModel : ViewModelBase
         var fileName = Path.GetFileName(apkPath);
         Log($"Installing: {fileName}");
 
-        InstallStatusText = $"설치 중: {fileName}";
+        InstallStatusText = string.Format(LocalizationManager.Get("Msg.InstallProgress"), fileName);
         IsInstallOverlayVisible = true;
 
         try
@@ -784,8 +804,8 @@ public class MainViewModel : ViewModelBase
                 if (packageName != null)
                 {
                     var launch = MessageBox.Show(
-                        $"{fileName} 설치 완료!\n\n앱을 바로 실행할까요?",
-                        "설치 성공", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                        string.Format(LocalizationManager.Get("Msg.InstallLaunchPrompt"), fileName),
+                        LocalizationManager.Get("Msg.InstallSuccess"), MessageBoxButton.YesNo, MessageBoxImage.Question);
 
                     if (launch == MessageBoxResult.Yes)
                     {
@@ -794,48 +814,56 @@ public class MainViewModel : ViewModelBase
                 }
                 else
                 {
-                    MessageBox.Show($"{fileName} 설치 완료!", "설치 성공");
+                    MessageBox.Show(
+                        string.Format(LocalizationManager.Get("Msg.InstallComplete"), fileName),
+                        LocalizationManager.Get("Msg.InstallSuccess"));
                 }
             }
             else
             {
                 Log($"Install failed: {result}");
-                MessageBox.Show($"설치 실패:\n{result}", "오류");
+                MessageBox.Show($"{LocalizationManager.Get("Msg.InstallFailed")}:\n{result}",
+                    LocalizationManager.Get("Msg.Error"));
             }
         }
         catch (Exception ex)
         {
             IsInstallOverlayVisible = false;
             Log($"Install error: {ex.Message}");
-            MessageBox.Show($"설치 중 오류:\n{ex.Message}", "오류");
+            MessageBox.Show($"{LocalizationManager.Get("Msg.InstallError")}:\n{ex.Message}",
+                LocalizationManager.Get("Msg.Error"));
         }
     }
 
+    /// <summary>APK 설치 후 패키지명 조회 — adb shell pm list packages를 이용 (aapt 불필요)</summary>
     private async Task<string?> TryGetPackageNameAsync(string apkPath)
     {
         try
         {
-            var aaptPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "aapt.exe");
-            if (File.Exists(aaptPath))
-            {
-                var output = await Task.Run(() =>
-                {
-                    var psi = new ProcessStartInfo
-                    {
-                        FileName = aaptPath,
-                        Arguments = $"dump badging \"{apkPath}\"",
-                        RedirectStandardOutput = true,
-                        UseShellExecute = false,
-                        CreateNoWindow = true
-                    };
-                    using var proc = Process.Start(psi);
-                    return proc!.StandardOutput.ReadToEnd();
-                });
+            if (_deviceSerial == null) return null;
 
-                var match = System.Text.RegularExpressions.Regex.Match(output, @"package: name='([^']+)'");
-                if (match.Success) return match.Groups[1].Value;
-            }
-            return null;
+            // APK 파일명에서 패키지명 힌트 추출 (예: com.example.app-release.apk → com.example.app)
+            var fileName = Path.GetFileNameWithoutExtension(apkPath)
+                .Replace("-release", "").Replace("-debug", "").Replace("_release", "").Replace("_debug", "");
+
+            // 설치된 패키지 목록에서 파일명과 매칭되는 패키지 검색
+            var output = await Task.Run(async () =>
+            {
+                return await _adb.ExecuteCommandAsync(
+                    $"-s {_deviceSerial} shell pm list packages -3").ConfigureAwait(false);
+            });
+
+            // 가장 최근 설치된 패키지 중 파일명과 유사한 것 찾기
+            var packages = output.Split('\n')
+                .Where(l => l.StartsWith("package:"))
+                .Select(l => l.Replace("package:", "").Trim())
+                .ToArray();
+
+            // 정확한 패키지명 매칭 시도
+            var match = packages.FirstOrDefault(p =>
+                p.Contains(fileName, StringComparison.OrdinalIgnoreCase));
+
+            return match;
         }
         catch { return null; }
     }
@@ -860,8 +888,7 @@ public class MainViewModel : ViewModelBase
     {
         if (VideoSource is not BitmapSource bitmap)
         {
-            MessageBox.Show(LocalizationManager.Get("Msg.NoCaptureSource") is string s && s != "[Msg.NoCaptureSource]" 
-                ? s : "캡처할 화면이 없습니다.");
+            MessageBox.Show(LocalizationManager.Get("Msg.NoCaptureSource"));
             return;
         }
 
@@ -880,8 +907,7 @@ public class MainViewModel : ViewModelBase
     {
         if (_deviceSerial == null)
         {
-            MessageBox.Show(LocalizationManager.Get("Msg.ConnectFirst") is string s && s != "[Msg.ConnectFirst]" 
-                ? s : "먼저 기기를 연결하세요.");
+            MessageBox.Show(LocalizationManager.Get("Msg.ConnectFirst"));
             return;
         }
 
@@ -959,10 +985,8 @@ public class MainViewModel : ViewModelBase
         Log($"Error report copied to clipboard! ({logcatOutput.Split('\n').Length} log lines)");
         Log($"Screenshot: {screenshotInfo}");
         MessageBox.Show(
-            "오류 리포트가 클립보드에 복사되었습니다!\n\n" +
-            "Cursor AI 또는 AI 코딩 도구에 Ctrl+V로 붙여넣기 하세요.\n" +
-            "(스크린샷 + 시스템 정보 + 오류 로그 포함)",
-            "리포트 복사 완료");
+            LocalizationManager.Get("Msg.ReportCopied"),
+            LocalizationManager.Get("Msg.ReportCopiedTitle"));
     }
 
     private static BitmapSource CopyBitmap(BitmapSource source)

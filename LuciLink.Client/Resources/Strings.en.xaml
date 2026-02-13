@@ -49,6 +49,7 @@
     <sys:String x:Key="Profile.Subscribed">Pro Active</sys:String>
     <sys:String x:Key="Profile.Trial">Trial Active</sys:String>
     <sys:String x:Key="Profile.Expired">Trial Expired</sys:String>
+    <sys:String x:Key="Profile.Cancelled">Cancelled</sys:String>
     <sys:String x:Key="Profile.PlanExpired">Expired</sys:String>
     <sys:String x:Key="Profile.Tooltip">Profile</sys:String>
 
@@ -57,6 +58,74 @@
     <sys:String x:Key="Msg.Disconnected">Device disconnected.&#x0a;Check the USB cable and reconnect.</sys:String>
     <sys:String x:Key="Msg.DisconnectedTitle">Disconnected</sys:String>
     <sys:String x:Key="Msg.BrowserError">Unable to open web browser.</sys:String>
+    <sys:String x:Key="Msg.ConnectionFailed">Connection Failed</sys:String>
+    <sys:String x:Key="Msg.ApkOnly">Only APK files can be installed.</sys:String>
+    <sys:String x:Key="Msg.ConnectFirst">Please connect a device first.</sys:String>
+    <sys:String x:Key="Msg.NoCaptureSource">No screen to capture.</sys:String>
+
+    <!-- ===== Subscription/Trial Messages ===== -->
+    <sys:String x:Key="Msg.TrialRequired">Please start your free trial first.&#x0a;Tap 'Start Trial' in your profile.</sys:String>
+    <sys:String x:Key="Msg.SubExpired">Your subscription has expired.&#x0a;Renew to continue using the app.</sys:String>
+    <sys:String x:Key="Msg.FeatureRestricted">Feature Restricted</sys:String>
+    <sys:String x:Key="Msg.EmailVerifyRequired">Email verification is required.&#x0a;&#x0a;Please check the verification email sent during signup.&#x0a;Also check your spam folder.</sys:String>
+    <sys:String x:Key="Msg.EmailVerifyTitle">Email Verification Required</sys:String>
+    <sys:String x:Key="Msg.DeviceAlreadyUsed">A free trial has already been used on this device.&#x0a;Please purchase a subscription to continue.</sys:String>
+    <sys:String x:Key="Msg.DeviceAlreadyUsedTitle">Trial Unavailable</sys:String>
+    <sys:String x:Key="Msg.TrialActivationFailed">Trial activation failed.</sys:String>
+    <sys:String x:Key="Msg.Error">Error</sys:String>
+    <sys:String x:Key="Msg.TrialStartConfirm">Your 3-day free trial starts now.&#x0a;&#x0a;You can use all LuciLink features during the trial.&#x0a;A subscription is required after the trial ends.&#x0a;&#x0a;Continue?</sys:String>
+    <sys:String x:Key="Msg.TrialStartTitle">Start Free Trial</sys:String>
+    <sys:String x:Key="Msg.TrialLater">You can start the free trial later.&#x0a;To use device connection, please start the trial first.</sys:String>
+    <sys:String x:Key="Msg.Notice">Notice</sys:String>
+
+    <!-- ===== Update Messages ===== -->
+    <sys:String x:Key="Msg.UpdateAvailable">A new update is available.&#x0a;&#x0a;Download and install?</sys:String>
+    <sys:String x:Key="Msg.UpdateTitle">Update Available</sys:String>
+
+    <!-- ===== APK Install Messages ===== -->
+    <sys:String x:Key="Msg.InstallProgress">Installing: {0}</sys:String>
+    <sys:String x:Key="Msg.InstallComplete">{0} installed!</sys:String>
+    <sys:String x:Key="Msg.InstallSuccess">Install Success</sys:String>
+    <sys:String x:Key="Msg.InstallLaunchPrompt">{0} installed!&#x0a;&#x0a;Launch the app now?</sys:String>
+    <sys:String x:Key="Msg.InstallFailed">Install Failed</sys:String>
+    <sys:String x:Key="Msg.InstallError">Install Error</sys:String>
+
+    <!-- ===== Report Messages ===== -->
+    <sys:String x:Key="Msg.ReportCopied">Error report copied to clipboard!&#x0a;&#x0a;Paste into Cursor AI or your AI coding tool with Ctrl+V.&#x0a;(Includes screenshot + system info + error logs)</sys:String>
+    <sys:String x:Key="Msg.ReportCopiedTitle">Report Copied</sys:String>
+
+    <!-- ===== Password Reset ===== -->
+    <sys:String x:Key="Msg.ForgotPwPrompt">Enter your email to reset your password:</sys:String>
+    <sys:String x:Key="Msg.ForgotPwTitle">Reset Password</sys:String>
+    <sys:String x:Key="Msg.ForgotPwSent">Password reset email sent.&#x0a;Check your inbox.</sys:String>
+    <sys:String x:Key="Msg.ForgotPwFailed">Password reset request failed.</sys:String>
+
+    <!-- ===== Signup ===== -->
+    <sys:String x:Key="Msg.SignupSuccess">Account created!&#x0a;Please verify your email address.</sys:String>
+    <sys:String x:Key="Msg.SignupTitle">Sign Up</sys:String>
+    <sys:String x:Key="Msg.PwMismatch">Passwords do not match.</sys:String>
+    <sys:String x:Key="Login.ConfirmPassword">Confirm Password</sys:String>
+    <sys:String x:Key="Login.BackToLogin">Back to Sign In</sys:String>
+    <sys:String x:Key="Login.SignupButton">Create Account</sys:String>
+
+    <!-- ===== Settings ===== -->
+    <sys:String x:Key="Settings.Title">Settings</sys:String>
+    <sys:String x:Key="Settings.Streaming">Streaming</sys:String>
+    <sys:String x:Key="Settings.MaxResolution">Max Resolution</sys:String>
+    <sys:String x:Key="Settings.ResOriginal">Original</sys:String>
+    <sys:String x:Key="Settings.Bitrate">Bitrate</sys:String>
+    <sys:String x:Key="Settings.Framerate">Framerate</sys:String>
+    <sys:String x:Key="Settings.Save">Save</sys:String>
+    <sys:String x:Key="Settings.Close">Close</sys:String>
+    <sys:String x:Key="Settings.Tooltip">Settings</sys:String>
+
+    <!-- ===== Plan Selection ===== -->
+    <sys:String x:Key="Profile.Monthly">Monthly</sys:String>
+    <sys:String x:Key="Profile.Yearly">Yearly</sys:String>
+    <sys:String x:Key="Profile.MonthlyPrice">$7.99/mo</sys:String>
+    <sys:String x:Key="Profile.YearlyPrice">$79.99/yr</sys:String>
+    <sys:String x:Key="Profile.TrialPending">Trial Pending</sys:String>
+    <sys:String x:Key="Profile.PlanTrialPending">Free Trial (Pending)</sys:String>
 
     <!-- ===== Language ===== -->
     <sys:String x:Key="Lang.Current">English</sys:String>

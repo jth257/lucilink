@@ -23,6 +23,12 @@ public class AppSettings
     public double WindowHeight { get; set; } = 900;
     public bool IsMaximized { get; set; } = false;
 
+    // 스트리밍 설정
+    public int MaxWidth { get; set; } = 0;    // 0 = 원본 해상도
+    public int MaxHeight { get; set; } = 0;   // 0 = 원본 해상도
+    public int Bitrate { get; set; } = 8000000; // 8Mbps 기본값
+    public int Framerate { get; set; } = 60;
+
     /// <summary>설정 파일에서 로드 (없으면 기본값)</summary>
     public static AppSettings Load()
     {

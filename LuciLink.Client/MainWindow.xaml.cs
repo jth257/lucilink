@@ -81,6 +81,15 @@ public partial class MainWindow : Window
         }
     }
 
+    // ===== 회원가입 =====
+    private async void OnSignup(object sender, RoutedEventArgs e)
+    {
+        await _vm.Login.TrySignupAsync(
+            LoginIdBox.Text.Trim(),
+            LoginPwBox.Password,
+            SignupConfirmPwBox.Password);
+    }
+
     private async void OnLogout(object sender, RoutedEventArgs e)
     {
         await _vm.Login.LogoutAsync();
@@ -187,7 +196,7 @@ public class RectConverter : IMultiValueConverter
     }
 
     public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
-        => throw new NotImplementedException();
+        => [Binding.DoNothing];
 }
 
 /// <summary>
@@ -197,6 +206,7 @@ public class BoolToVisibilityConverter : IValueConverter
 {
     public static readonly BoolToVisibilityConverter Instance = new();
     public static readonly BoolToVisibilityConverter Inverse = new() { IsInverse = true };
+    public static readonly BoolToVisibilityConverter InverseInstance = Inverse;
 
     public bool IsInverse { get; set; }
 
@@ -208,7 +218,7 @@ public class BoolToVisibilityConverter : IValueConverter
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        => throw new NotImplementedException();
+        => Binding.DoNothing;
 }
 
 /// <summary>
@@ -226,5 +236,5 @@ public class ProgressToWidthConverter : IValueConverter
     }
 
     public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        => throw new NotImplementedException();
+        => Binding.DoNothing;
 }

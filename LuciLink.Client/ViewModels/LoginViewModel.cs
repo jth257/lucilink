@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Windows;
 
 namespace LuciLink.Client.ViewModels;
@@ -14,6 +13,7 @@ public class LoginViewModel : ViewModelBase
     private string _errorText = "";
     private bool _isLoggedIn;
     private bool _isLoading;
+    private bool _isSignupMode;
 
     public string Email
     {
@@ -39,17 +39,25 @@ public class LoginViewModel : ViewModelBase
         set => SetProperty(ref _isLoading, value);
     }
 
+    public bool IsSignupMode
+    {
+        get => _isSignupMode;
+        set => SetProperty(ref _isSignupMode, value);
+    }
+
     // 로그인 성공 시 호출: Name, Email, SubStatus, TrialDaysLeft
     public event Action<string, string, string, int>? LoginSucceeded;
 
     public RelayCommand LoginCommand { get; }
     public RelayCommand SignupCommand { get; }
+    public RelayCommand ForgotPasswordCommand { get; }
 
     public LoginViewModel(SupabaseAuthService auth)
     {
         _auth = auth;
         LoginCommand = new RelayCommand(_ => { }); // View에서 직접 TryLoginAsync 호출
         SignupCommand = new RelayCommand(OnSignup);
+        ForgotPasswordCommand = new RelayCommand(_ => OnForgotPassword());
     }
 
     /// <summary>앱 시작 시 저장된 세션 복원 시도</summary>
@@ -64,9 +72,13 @@ public class LoginViewModel : ViewModelBase
 
         // 구독 조회
         var sub = await _auth.GetSubscriptionAsync();
-        if (sub == null) return false;
+        string status = "pending";
+        int daysLeft = 0;
+        if (sub != null)
+        {
+            (status, daysLeft) = ParseSubscription(sub);
+        }
 
-        var (status, daysLeft) = ParseSubscription(sub);
         IsLoggedIn = true;
         LoginSucceeded?.Invoke(
             _auth.UserEmail ?? "User",
@@ -161,11 +173,13 @@ public class LoginViewModel : ViewModelBase
                 if (daysLeft <= 0) status = "expired";
             }
         }
-        else if (status == "active" && sub.CurrentPeriodEnd != null)
+        else if ((status == "active" || status == "cancelled") && sub.CurrentPeriodEnd != null)
         {
             if (DateTime.TryParse(sub.CurrentPeriodEnd, out var endDate))
             {
                 daysLeft = Math.Max(0, (int)Math.Ceiling((endDate - DateTime.UtcNow).TotalDays));
+                // cancelled이면서 이미 만료됐으면 expired
+                if (status == "cancelled" && daysLeft <= 0) status = "expired";
             }
         }
 
@@ -174,13 +188,70 @@ public class LoginViewModel : ViewModelBase
 
     private void OnSignup(object? _)
     {
-        try
+        IsSignupMode = !IsSignupMode;
+        ErrorText = "";
+    }
+
+    /// <summary>앱 내 회원가입: 이메일/비밀번호/비밀번호확인</summary>
+    public async Task TrySignupAsync(string email, string password, string confirmPassword)
+    {
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(password))
         {
-            Process.Start(new ProcessStartInfo("https://lucitella.com/signup") { UseShellExecute = true });
+            ErrorText = LocalizationManager.Get("Login.Error.Empty");
+            return;
         }
-        catch
+
+        if (password != confirmPassword)
         {
-            MessageBox.Show(LocalizationManager.Get("Msg.BrowserError") + "\nhttps://lucitella.com/signup");
+            ErrorText = LocalizationManager.Get("Msg.PwMismatch");
+            return;
+        }
+
+        ErrorText = "";
+        IsLoading = true;
+
+        var result = await _auth.SignUpAsync(email, password);
+
+        IsLoading = false;
+
+        if (result.Success)
+        {
+            MessageBox.Show(
+                LocalizationManager.Get("Msg.SignupSuccess"),
+                LocalizationManager.Get("Msg.SignupTitle"),
+                MessageBoxButton.OK, MessageBoxImage.Information);
+            IsSignupMode = false;
+        }
+        else
+        {
+            ErrorText = result.Error ?? LocalizationManager.Get("Msg.Error");
+        }
+    }
+
+    /// <summary>비밀번호 재설정 이메일 발송</summary>
+    private async void OnForgotPassword()
+    {
+        var email = Microsoft.VisualBasic.Interaction.InputBox(
+            LocalizationManager.Get("Msg.ForgotPwPrompt"),
+            LocalizationManager.Get("Msg.ForgotPwTitle"),
+            _email);
+
+        if (string.IsNullOrWhiteSpace(email)) return;
+
+        var result = await _auth.ResetPasswordAsync(email);
+        if (result.Success)
+        {
+            MessageBox.Show(
+                LocalizationManager.Get("Msg.ForgotPwSent"),
+                LocalizationManager.Get("Msg.ForgotPwTitle"),
+                MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+        else
+        {
+            MessageBox.Show(
+                result.Error ?? LocalizationManager.Get("Msg.ForgotPwFailed"),
+                LocalizationManager.Get("Msg.Error"),
+                MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 }

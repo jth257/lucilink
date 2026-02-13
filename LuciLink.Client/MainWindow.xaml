@@ -593,6 +593,41 @@
                                         </StackPanel>
                                     </Border>
 
+                                    <!-- 월간/연간 플랜 선택 -->
+                                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,0,0,16"
+                                                Visibility="{Binding Profile.IsSubscribeVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
+                                        <Border x:Name="MonthlyBtn" CornerRadius="8,0,0,8" BorderBrush="{StaticResource AccentBrush}" 
+                                                BorderThickness="1.5" Padding="14,8" Cursor="Hand"
+                                                Background="{StaticResource AccentBrush}">
+                                            <Border.InputBindings>
+                                                <MouseBinding Gesture="LeftClick" Command="{Binding Profile.SelectMonthlyCommand}"/>
+                                            </Border.InputBindings>
+                                            <StackPanel>
+                                                <TextBlock Text="{DynamicResource Profile.Monthly}" FontSize="11" FontWeight="SemiBold" 
+                                                           Foreground="White" HorizontalAlignment="Center"
+                                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                                <TextBlock Text="{DynamicResource Profile.MonthlyPrice}" FontSize="10" 
+                                                           Foreground="#C5CAE9" HorizontalAlignment="Center" Margin="0,2,0,0"
+                                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border x:Name="YearlyBtn" CornerRadius="0,8,8,0" BorderBrush="{StaticResource AccentBrush}" 
+                                                BorderThickness="0,1.5,1.5,1.5" Padding="14,8" Cursor="Hand"
+                                                Background="Transparent">
+                                            <Border.InputBindings>
+                                                <MouseBinding Gesture="LeftClick" Command="{Binding Profile.SelectYearlyCommand}"/>
+                                            </Border.InputBindings>
+                                            <StackPanel>
+                                                <TextBlock Text="{DynamicResource Profile.Yearly}" FontSize="11" FontWeight="SemiBold" 
+                                                           Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Center"
+                                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                                <TextBlock Text="{DynamicResource Profile.YearlyPrice}" FontSize="10" 
+                                                           Foreground="{StaticResource TextSecondaryBrush}" HorizontalAlignment="Center" Margin="0,2,0,0"
+                                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </StackPanel>
+
                                     <!-- 구독하기 버튼 -->
                                     <Button Content="{DynamicResource Profile.Subscribe}" 
                                             Command="{Binding Profile.SubscribeCommand}" Foreground="White" 
@@ -608,6 +643,119 @@
                             </Border>
                         </Border>
                     </Grid>
+                </Border>
+
+                <!-- ===== 설정 패널 오버레이 ===== -->
+                <Border x:Name="SettingsPanel" Background="#CC000000" 
+                        Visibility="{Binding Settings.IsPanelVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
+                    <Border Background="White" CornerRadius="20" 
+                            Margin="24" Padding="28,24" VerticalAlignment="Center" HorizontalAlignment="Center"
+                            MinWidth="320">
+                        <Border.Effect>
+                            <DropShadowEffect BlurRadius="30" ShadowDepth="8" Opacity="0.2" Direction="270"/>
+                        </Border.Effect>
+                        <StackPanel>
+                            <!-- 타이틀 -->
+                            <TextBlock Text="{DynamicResource Settings.Title}" FontSize="20" FontWeight="SemiBold"
+                                       Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,24"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+
+                            <!-- 스트리밍 섹션 -->
+                            <TextBlock Text="{DynamicResource Settings.Streaming}" FontSize="12" FontWeight="Medium"
+                                       Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,16"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+
+                            <!-- 최대 해상도 -->
+                            <Border Background="#FAFAFA" CornerRadius="12" Padding="16,12" Margin="0,0,0,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{DynamicResource Settings.MaxResolution}" FontSize="13" FontWeight="Medium"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                        <TextBlock Text="{Binding Settings.ResolutionText}" FontSize="11"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0"
+                                                   FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                                        <TextBox Text="{Binding Settings.MaxWidth, UpdateSourceTrigger=PropertyChanged}" 
+                                                 Width="50" Style="{StaticResource InputFieldStyle}" 
+                                                 FontSize="11" Padding="4,4" HorizontalContentAlignment="Center"/>
+                                        <TextBlock Text="×" FontSize="12" Foreground="{StaticResource TextSecondaryBrush}" 
+                                                   VerticalAlignment="Center" Margin="6,0"/>
+                                        <TextBox Text="{Binding Settings.MaxHeight, UpdateSourceTrigger=PropertyChanged}" 
+                                                 Width="50" Style="{StaticResource InputFieldStyle}" 
+                                                 FontSize="11" Padding="4,4" HorizontalContentAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <!-- 비트레이트 -->
+                            <Border Background="#FAFAFA" CornerRadius="12" Padding="16,12" Margin="0,0,0,10">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{DynamicResource Settings.Bitrate}" FontSize="13" FontWeight="Medium"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0"
+                                                   FontFamily="Segoe UI Variable, Segoe UI, sans-serif">
+                                            <TextBlock.Text>
+                                                <Binding Path="Settings.BitrateMbps" StringFormat="{}{0:F1} Mbps"/>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <Slider Grid.Column="1" Width="120" VerticalAlignment="Center"
+                                            Minimum="1" Maximum="30" TickFrequency="1"
+                                            Value="{Binding Settings.BitrateMbps}"
+                                            Foreground="{StaticResource AccentBrush}"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- 프레임레이트 -->
+                            <Border Background="#FAFAFA" CornerRadius="12" Padding="16,12" Margin="0,0,0,24">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="{DynamicResource Settings.Framerate}" FontSize="13" FontWeight="Medium"
+                                                   Foreground="{StaticResource TextPrimaryBrush}"
+                                                   FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                        <TextBlock FontSize="11" Foreground="{StaticResource TextSecondaryBrush}" Margin="0,2,0,0"
+                                                   FontFamily="Segoe UI Variable, Segoe UI, sans-serif">
+                                            <TextBlock.Text>
+                                                <Binding Path="Settings.Framerate" StringFormat="{}{0} fps"/>
+                                            </TextBlock.Text>
+                                        </TextBlock>
+                                    </StackPanel>
+                                    <Slider Grid.Column="1" Width="120" VerticalAlignment="Center"
+                                            Minimum="15" Maximum="120" TickFrequency="5"
+                                            Value="{Binding Settings.Framerate}"
+                                            Foreground="{StaticResource AccentBrush}"/>
+                                </Grid>
+                            </Border>
+
+                            <!-- 버튼 -->
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                <Button Content="{DynamicResource Settings.Close}" 
+                                        Command="{Binding Settings.CloseCommand}" 
+                                        Style="{StaticResource LinkButtonStyle}"
+                                        Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,12,0"/>
+                                <Button Content="{DynamicResource Settings.Save}" 
+                                        Command="{Binding Settings.SaveCommand}" Foreground="White"
+                                        Style="{StaticResource ConnectButtonStyle}" 
+                                        Padding="20,10"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </Border>
 
                 <!-- ===== 네비게이션 바 ===== -->
@@ -641,6 +789,9 @@
                         <Button DockPanel.Dock="Left" Command="{Binding CaptureScreenCommand}" Content="{DynamicResource Tool.Capture}" 
                                 Style="{StaticResource ToolButtonStyle}" Margin="0,0,4,0"/>
                         <Button DockPanel.Dock="Left" Command="{Binding CopyReportCommand}" Content="{DynamicResource Tool.Report}" 
+                                Style="{StaticResource ToolButtonStyle}" Margin="0,0,4,0"/>
+                        <Button DockPanel.Dock="Left" Command="{Binding Settings.TogglePanelCommand}" 
+                                Content="⚙" ToolTip="{DynamicResource Settings.Tooltip}"
                                 Style="{StaticResource ToolButtonStyle}" Margin="0,0,4,0"/>
                         <Button DockPanel.Dock="Right" Command="{Binding ToggleLogCommand}" Content="{DynamicResource Tool.Log}" 
                                 Style="{StaticResource ToolButtonStyle}" Margin="4,0,0,0"/>
@@ -730,8 +881,7 @@
                                              Margin="0,0,0,4"/>
 
                                 <TextBlock HorizontalAlignment="Right" Margin="0,0,2,12">
-                                    <Hyperlink NavigateUri="https://lucitella.com/forgot-password" 
-                                               RequestNavigate="OnHyperlinkNavigate"
+                                    <Hyperlink Command="{Binding Login.ForgotPasswordCommand}"
                                                Foreground="{StaticResource TextSecondaryBrush}" FontSize="11"
                                                TextDecorations="None">
                                         <Run Text="{DynamicResource Login.ForgotPassword}"/>
@@ -742,9 +892,25 @@
                                            HorizontalAlignment="Center" Margin="0,0,0,16"
                                            FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
 
+                                <!-- 비밀번호 확인 (회원가입 모드) -->
+                                <StackPanel Visibility="{Binding Login.IsSignupMode, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
+                                    <TextBlock Text="{DynamicResource Login.ConfirmPassword}" FontSize="12" FontWeight="Medium"
+                                               Foreground="{StaticResource TextSecondaryBrush}" 
+                                               Margin="2,0,0,6"
+                                               FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                                    <PasswordBox x:Name="SignupConfirmPwBox" Style="{StaticResource PasswordFieldStyle}" 
+                                                 Margin="0,0,0,16"/>
+                                </StackPanel>
+
                                 <Button Content="{DynamicResource Login.Button}" Click="OnLogin" Foreground="White"
                                         Style="{StaticResource ConnectButtonStyle}" 
-                                        Padding="0,14" HorizontalAlignment="Stretch" Margin="0,0,0,20"/>
+                                        Padding="0,14" HorizontalAlignment="Stretch" Margin="0,0,0,20"
+                                        Visibility="{Binding Login.IsSignupMode, Converter={x:Static local:BoolToVisibilityConverter.InverseInstance}}"/>
+
+                                <Button Content="{DynamicResource Login.SignupButton}" Click="OnSignup" Foreground="White"
+                                        Style="{StaticResource ConnectButtonStyle}" 
+                                        Padding="0,14" HorizontalAlignment="Stretch" Margin="0,0,0,20"
+                                        Visibility="{Binding Login.IsSignupMode, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
 
                                 <!-- 구분선 -->
                                 <Grid Margin="0,0,0,20">
@@ -762,7 +928,12 @@
                                             VerticalAlignment="Center" Margin="12,0,0,0"/>
                                 </Grid>
 
-                                <Button Content="{DynamicResource Login.Signup}" Command="{Binding Login.SignupCommand}" Style="{StaticResource LinkButtonStyle}"/>
+                                <Button Content="{DynamicResource Login.Signup}" 
+                                        Command="{Binding Login.SignupCommand}" Style="{StaticResource LinkButtonStyle}"
+                                        Visibility="{Binding Login.IsSignupMode, Converter={x:Static local:BoolToVisibilityConverter.InverseInstance}}"/>
+                                <Button Content="{DynamicResource Login.BackToLogin}" 
+                                        Command="{Binding Login.SignupCommand}" Style="{StaticResource LinkButtonStyle}"
+                                        Visibility="{Binding Login.IsSignupMode, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
                             </StackPanel>
                         </ScrollViewer>
                     </Grid>
