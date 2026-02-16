@@ -23,6 +23,7 @@
     <sys:String x:Key="Button.Connect">Connect</sys:String>
     <sys:String x:Key="Button.Disconnect">Disconnect</sys:String>
     <sys:String x:Key="Status.Reconnecting">Reconnecting...</sys:String>
+    <sys:String x:Key="Status.CompatMode">Reconnecting in compatibility mode...</sys:String>
 
     <!-- ===== Placeholder ===== -->
     <sys:String x:Key="Placeholder.Title">Ready to Stream</sys:String>
@@ -91,8 +92,21 @@
     <sys:String x:Key="Msg.InstallError">Install Error</sys:String>
 
     <!-- ===== Report Messages ===== -->
-    <sys:String x:Key="Msg.ReportCopied">Error report copied to clipboard!&#x0a;&#x0a;Paste into Cursor AI or your AI coding tool with Ctrl+V.&#x0a;(Includes screenshot + system info + error logs)</sys:String>
+    <sys:String x:Key="Msg.ReportCopied">AI report copied to clipboard!&#x0a;&#x0a;Paste into Cursor AI or your AI coding tool with Ctrl+V.&#x0a;(Includes screenshot + UI structure + error logs)</sys:String>
     <sys:String x:Key="Msg.ReportCopiedTitle">Report Copied</sys:String>
+
+    <!-- ===== AI Report Mode ===== -->
+    <sys:String x:Key="Report.Mode.Enter">AI Report Mode</sys:String>
+    <sys:String x:Key="Report.Mode.Exit">Exit Report</sys:String>
+    <sys:String x:Key="Report.Generate">Generate Report</sys:String>
+    <sys:String x:Key="Report.AnnoPanel">Selected Element</sys:String>
+    <sys:String x:Key="Report.Memo.Label">Memo</sys:String>
+    <sys:String x:Key="Report.Memo.Placeholder">Enter memo...</sys:String>
+    <sys:String x:Key="Report.DumpProgress">Analyzing UI structure...</sys:String>
+    <sys:String x:Key="Report.Copied">AI report copied to clipboard!&#x0a;&#x0a;Report file also saved to Pictures/LuciLink folder.</sys:String>
+    <sys:String x:Key="Report.ElementCount">{0} UI elements found</sys:String>
+    <sys:String x:Key="Report.AnnotationCount">Annotations</sys:String>
+    <sys:String x:Key="Report.Generating">Generating report...</sys:String>
 
     <!-- ===== Password Reset ===== -->
     <sys:String x:Key="Msg.ForgotPwPrompt">Enter your email to reset your password:</sys:String>

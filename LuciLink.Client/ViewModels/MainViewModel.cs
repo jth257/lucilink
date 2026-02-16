@@ -51,6 +51,12 @@ public class MainViewModel : ViewModelBase
     private const int MaxReconnectAttempts = 3;
     private const int ReconnectDelayMs = 5000;
 
+    // 호환 모드 폴백 (인코더 에러 시 자동 전환)
+    private bool _compatMode;
+#pragma warning disable CS0414 // 향후 디버깅/진단에 활용
+    private volatile bool _encoderErrorDetected;
+#pragma warning restore CS0414
+
     // 바인딩 속성
     private bool _isConnected;
     private bool _canConnect = true;
@@ -74,6 +80,7 @@ public class MainViewModel : ViewModelBase
     public LoginViewModel Login { get; }
     public ProfileViewModel Profile { get; }
     public SettingsViewModel Settings { get; }
+    public ReportViewModel Report { get; }
     private AppSettings _appSettings;
 
     #region Binding Properties
@@ -197,10 +204,15 @@ public class MainViewModel : ViewModelBase
         Login = new LoginViewModel(_authService);
         Profile = new ProfileViewModel();
         Settings = new SettingsViewModel(_appSettings);
+        Report = new ReportViewModel(_adb);
 
-        // 로그인 성공 → 프로필 업데이트
+        // 리포트 로그 연결
+        Report.LogMessage += msg => Log(msg);
+
+        // 로그인 성공 → 프로필 업데이트 + 구독 상태 동기화
         Login.LoginSucceeded += (name, email, subStatus, trialDays) =>
         {
+            _currentSubStatus = subStatus ?? "pending";
             Profile.SetUser(name, email, subStatus, trialDays);
         };
 
@@ -219,7 +231,7 @@ public class MainViewModel : ViewModelBase
         NavHomeCommand = new AsyncRelayCommand(() => InjectKeyAsync(3));
         NavRecentCommand = new AsyncRelayCommand(() => InjectKeyAsync(187));
         CaptureScreenCommand = new RelayCommand(OnCaptureScreen);
-        CopyReportCommand = new AsyncRelayCommand(OnCopyReport);
+        CopyReportCommand = new AsyncRelayCommand(() => Report.EnterReportModeAsync());
         ToggleLogCommand = new RelayCommand(() => IsLogVisible = !IsLogVisible);
         ToggleLanguageCommand = new RelayCommand(OnToggleLanguage);
 
@@ -363,8 +375,17 @@ public class MainViewModel : ViewModelBase
             var serverPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "scrcpy-server.jar");
             await _server.PushServerAsync(_deviceSerial, serverPath).ConfigureAwait(false);
 
-            // 4. 서버 시작
-            _serverProcess = await _server.StartServerAsync(_deviceSerial, 0, 0).ConfigureAwait(false);
+            // 4. 서버 시작 (설정값 또는 호환 모드 파라미터 적용)
+            int maxSize = _compatMode ? 800 : Math.Max(_appSettings.MaxWidth, _appSettings.MaxHeight);
+            int bitrate = _compatMode ? 2_000_000 : _appSettings.Bitrate;
+            int maxFps = _compatMode ? 30 : _appSettings.Framerate;
+            string? encoder = _compatMode ? "OMX.google.h264.encoder" 
+                : (string.IsNullOrEmpty(_appSettings.VideoEncoder) ? null : _appSettings.VideoEncoder);
+
+            Log($"Server params: maxSize={maxSize}, bitrate={bitrate/1_000_000.0}Mbps, fps={maxFps}, encoder={encoder ?? "(default)"}");
+            _encoderErrorDetected = false;
+            _serverProcess = await _server.StartServerAsync(
+                _deviceSerial, maxSize, bitrate, maxFps, encoder).ConfigureAwait(false);
             Log($"Server started (socket: {_server.SocketName})");
 
             // 5. 포트 포워딩
@@ -422,6 +443,7 @@ public class MainViewModel : ViewModelBase
                 IsPlaceholderVisible = false;
                 IsConnected = true;
                 UpdateStatus(true, deviceName);
+                Report.SetDevice(_deviceSerial!, 0, 0); // 실제 크기는 DecodeLoop에서 갱신
             });
         }
         catch (Exception ex)
@@ -589,19 +611,28 @@ public class MainViewModel : ViewModelBase
             int initW = BinaryPrimitives.ReadInt32BigEndian(codecMeta.AsSpan(4, 4));
             int initH = BinaryPrimitives.ReadInt32BigEndian(codecMeta.AsSpan(8, 4));
             Log($"Codec: 0x{codecId:X8}, {initW}x{initH}");
+            Log($"Codec meta hex: {BitConverter.ToString(codecMeta)}");
 
             byte[] headerBuf = new byte[12];
             byte[] packetBuf = new byte[1024 * 1024];
+            int packetCount = 0;
+            int decodeSuccess = 0;
+            int decodeFail = 0;
 
             while (_isRunning)
             {
                 ReadExactly(stream, headerBuf, 0, 12);
                 long pts = BinaryPrimitives.ReadInt64BigEndian(headerBuf.AsSpan(0, 8));
                 int size = BinaryPrimitives.ReadInt32BigEndian(headerBuf.AsSpan(8, 4));
+                packetCount++;
+
+                // 첫 10패킷 상세 로그
+                if (packetCount <= 10)
+                    Log($"[Pkt#{packetCount}] pts={pts}, size={size}, header={BitConverter.ToString(headerBuf)}");
 
                 if (size <= 0 || size > 10 * 1024 * 1024)
                 {
-                    Log($"[Warn] Bad packet size: {size}");
+                    Log($"[Warn] Bad packet size: {size} at pkt#{packetCount}");
                     continue;
                 }
 
@@ -613,9 +644,17 @@ public class MainViewModel : ViewModelBase
                 byte[] frameData = new byte[size];
                 Array.Copy(packetBuf, frameData, size);
 
+                // 첫 패킷 NAL 유닛 타입 로그
+                if (packetCount <= 5 && size >= 5)
+                    Log($"[Pkt#{packetCount}] NAL bytes: {BitConverter.ToString(frameData, 0, Math.Min(16, size))}");
+
                 var frame = _decoder.Decode(frameData);
                 if (frame != null)
                 {
+                    decodeSuccess++;
+                    if (decodeSuccess <= 3)
+                        Log($"[Decode OK #{decodeSuccess}] {frame->width}x{frame->height} fmt={(AVPixelFormat)frame->format}");
+
                     _renderer?.Render(frame);
                     _inputManager?.UpdateVideoSize(frame->width, frame->height);
 
@@ -644,6 +683,16 @@ public class MainViewModel : ViewModelBase
                         DeviceInfoText = $"{fw} x {fh}";
                     }, DispatcherPriority.Background);
                 }
+                else
+                {
+                    decodeFail++;
+                    if (decodeFail <= 5)
+                        Log($"[Decode FAIL #{decodeFail}] pkt#{packetCount} size={size}");
+                }
+
+                // 50패킷마다 상태 요약
+                if (packetCount % 50 == 0)
+                    Log($"[Stats] pkts={packetCount}, decoded={decodeSuccess}, failed={decodeFail}");
             }
         }
         catch (Exception ex)
@@ -1071,7 +1120,19 @@ public class MainViewModel : ViewModelBase
                 while (!proc.HasExited)
                 {
                     var line = await proc.StandardError.ReadLineAsync();
-                    if (!string.IsNullOrEmpty(line)) { log.AppendLine(line); Log($"[Scrcpy] {line}"); }
+                    if (!string.IsNullOrEmpty(line))
+                    {
+                        log.AppendLine(line); Log($"[Scrcpy] {line}");
+                        // 인코더 에러 감지 → 호환 모드 폴백 트리거
+                        if (!_compatMode && (line.Contains("Video encoding error") || 
+                            line.Contains("Could not open codec") ||
+                            line.Contains("encoding error", StringComparison.OrdinalIgnoreCase)))
+                        {
+                            _encoderErrorDetected = true;
+                            Log("[!] Encoder error detected — will retry in compat mode.");
+                            _dispatcher.InvokeAsync(() => TryCompatModeFallback());
+                        }
+                    }
                 }
             }
             catch { }
@@ -1088,6 +1149,33 @@ public class MainViewModel : ViewModelBase
             }
             catch { }
         });
+    }
+
+    /// <summary>인코더 에러 감지 시 호환 모드로 자동 재연결</summary>
+    private async void TryCompatModeFallback()
+    {
+        if (_compatMode) return; // 이미 호환 모드였으면 중복 방지
+
+        Log("Switching to compatibility mode (software encoder + 800p + 2Mbps)...");
+        StatusText = LocalizationManager.Get("Status.CompatMode") ?? "호환 모드로 재연결 중...";
+        StatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFA726"));
+
+        Cleanup();
+        await Task.Delay(2000); // 인코더 릴리스 대기
+
+        _compatMode = true;
+        try
+        {
+            await ConnectAsync();
+            if (_isRunning)
+                Log("Compat mode connection successful!");
+        }
+        catch (Exception ex)
+        {
+            Log($"Compat mode failed: {ex.Message}");
+            _compatMode = false;
+            OnConnectionLost();
+        }
     }
 
     private async Task ConnectWithRetry(StreamReceiver receiver, Process serverProc, System.Text.StringBuilder serverLog)

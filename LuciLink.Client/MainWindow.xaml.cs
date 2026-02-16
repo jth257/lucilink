@@ -1,8 +1,11 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Input;
 using System.Windows.Threading;
+using LuciLink.Client.Rendering;
 using LuciLink.Client.ViewModels;
 
 namespace LuciLink.Client;
@@ -49,6 +52,9 @@ public partial class MainWindow : Window
         // 설정에서 창 위치/크기 복원
         RestoreWindowPosition();
 
+        // 리포트 캔버스 연결
+        SetupReportCanvas();
+
         // 앱 시작 시 세션 복원 시도
         Loaded += async (s, e) => await TryAutoLoginAsync();
 
@@ -58,6 +64,66 @@ public partial class MainWindow : Window
             _vm.OnClosed();
         };
     }
+
+    #region Report Canvas
+
+    private void SetupReportCanvas()
+    {
+        // 어노테이션 추가 시 캔버스에 반영
+        _vm.Report.AnnotationAdded += anno =>
+        {
+            ReportCanvas.AddAnnotation(anno);
+        };
+        _vm.Report.AnnotationRemoved += anno =>
+        {
+            ReportCanvas.RemoveAnnotation(anno);
+        };
+        _vm.Report.AnnotationsCleared += () =>
+        {
+            ReportCanvas.ClearAnnotations();
+        };
+
+        // 리포트 모드 진입/종료 시 캔버스 디바이스 크기 갱신
+        _vm.Report.PropertyChanged += (s, e) =>
+        {
+            if (e.PropertyName == nameof(ReportViewModel.CapturedScreenshot) &&
+                _vm.Report.CapturedScreenshot != null)
+            {
+                ReportCanvas.SetDeviceSize(
+                    _vm.Report.CapturedScreenshot.PixelWidth,
+                    _vm.Report.CapturedScreenshot.PixelHeight);
+            }
+        };
+
+        // 더블클릭 메모 요청
+        ReportCanvas.AnnotationMemoRequested += anno =>
+        {
+            ReportMemoBox.Focus();
+        };
+    }
+
+    private void OnReportCanvasClick(object sender, MouseButtonEventArgs e)
+    {
+        var pos = e.GetPosition(ReportCanvas);
+        var (androidX, androidY) = ReportCanvas.ToAndroidCoords(pos.X, pos.Y);
+        _vm.Report.SelectElementAt(androidX, androidY);
+    }
+
+    private void OnReportMemoChanged(object sender, TextChangedEventArgs e)
+    {
+        if (sender is TextBox textBox)
+        {
+            // 현재 선택된 어노테이션의 메모 업데이트
+            var selectedAnno = _vm.Report.Annotations.LastOrDefault();
+            if (selectedAnno != null)
+            {
+                _vm.Report.SetAnnotationMemo(selectedAnno, textBox.Text);
+                ReportCanvas.Redraw();
+            }
+        }
+    }
+
+    #endregion
 
     // ===== 앱 시작 시 저장된 세션으로 자동 로그인 =====
     private async Task TryAutoLoginAsync()

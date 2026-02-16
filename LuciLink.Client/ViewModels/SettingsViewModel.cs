@@ -71,6 +71,14 @@ public class SettingsViewModel : ViewModelBase
         set => SetProperty(ref _framerate, value);
     }
 
+    private string _videoEncoder = "";
+    /// <summary>비디오 인코더 (빈 문자열 = 기본 인코더)</summary>
+    public string VideoEncoder
+    {
+        get => _videoEncoder;
+        set => SetProperty(ref _videoEncoder, value);
+    }
+
     /// <summary>해상도 표시 텍스트</summary>
     public string ResolutionText => _maxWidth <= 0 || _maxHeight <= 0
         ? LocalizationManager.Get("Settings.ResOriginal")
@@ -88,6 +96,7 @@ public class SettingsViewModel : ViewModelBase
         MaxHeight = _settings.MaxHeight;
         Bitrate = _settings.Bitrate;
         Framerate = _settings.Framerate;
+        VideoEncoder = _settings.VideoEncoder;
     }
 
     private void Save()
@@ -96,6 +105,7 @@ public class SettingsViewModel : ViewModelBase
         _settings.MaxHeight = _maxHeight;
         _settings.Bitrate = _bitrate;
         _settings.Framerate = _framerate;
+        _settings.VideoEncoder = _videoEncoder;
         _settings.Save();
         IsPanelVisible = false;
     }

@@ -28,6 +28,7 @@ public class AppSettings
     public int MaxHeight { get; set; } = 0;   // 0 = 원본 해상도
     public int Bitrate { get; set; } = 8000000; // 8Mbps 기본값
     public int Framerate { get; set; } = 60;
+    public string VideoEncoder { get; set; } = ""; // 빈 문자열 = 기본 인코더
 
     /// <summary>설정 파일에서 로드 (없으면 기본값)</summary>
     public static AppSettings Load()

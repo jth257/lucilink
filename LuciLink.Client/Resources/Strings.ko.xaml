@@ -23,6 +23,7 @@
     <sys:String x:Key="Button.Connect">연결</sys:String>
     <sys:String x:Key="Button.Disconnect">연결 해제</sys:String>
     <sys:String x:Key="Status.Reconnecting">재연결 시도 중...</sys:String>
+    <sys:String x:Key="Status.CompatMode">호환 모드로 재연결 중...</sys:String>
 
     <!-- ===== 플레이스홀더 ===== -->
     <sys:String x:Key="Placeholder.Title">스트리밍 준비</sys:String>
@@ -91,8 +92,21 @@
     <sys:String x:Key="Msg.InstallError">설치 중 오류</sys:String>
 
     <!-- ===== 리포트 메시지 ===== -->
-    <sys:String x:Key="Msg.ReportCopied">오류 리포트가 클립보드에 복사되었습니다!&#x0a;&#x0a;Cursor AI 또는 AI 코딩 도구에 Ctrl+V로 붙여넣기 하세요.&#x0a;(스크린샷 + 시스템 정보 + 오류 로그 포함)</sys:String>
+    <sys:String x:Key="Msg.ReportCopied">AI 리포트가 클립보드에 복사되었습니다!&#x0a;&#x0a;Cursor AI 또는 AI 코딩 도구에 Ctrl+V로 붙여넣기 하세요.&#x0a;(스크린샷 + UI 구조 + 오류 로그 포함)</sys:String>
     <sys:String x:Key="Msg.ReportCopiedTitle">리포트 복사 완료</sys:String>
+
+    <!-- ===== AI 리포트 모드 ===== -->
+    <sys:String x:Key="Report.Mode.Enter">AI 리포트 모드</sys:String>
+    <sys:String x:Key="Report.Mode.Exit">리포트 종료</sys:String>
+    <sys:String x:Key="Report.Generate">리포트 생성</sys:String>
+    <sys:String x:Key="Report.AnnoPanel">선택된 UI 요소</sys:String>
+    <sys:String x:Key="Report.Memo.Label">메모</sys:String>
+    <sys:String x:Key="Report.Memo.Placeholder">수정 메모 입력...</sys:String>
+    <sys:String x:Key="Report.DumpProgress">UI 구조 분석 중...</sys:String>
+    <sys:String x:Key="Report.Copied">AI 리포트가 클립보드에 복사되었습니다!&#x0a;&#x0a;리포트 파일도 Pictures/LuciLink 폴더에 저장되었습니다.</sys:String>
+    <sys:String x:Key="Report.ElementCount">UI 요소 {0}개 발견</sys:String>
+    <sys:String x:Key="Report.AnnotationCount">어노테이션</sys:String>
+    <sys:String x:Key="Report.Generating">리포트 생성 중...</sys:String>
 
     <!-- ===== 비밀번호 재설정 ===== -->
     <sys:String x:Key="Msg.ForgotPwPrompt">비밀번호를 재설정할 이메일 주소를 입력하세요:</sys:String>

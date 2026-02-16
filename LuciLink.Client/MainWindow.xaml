@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:LuciLink.Client"
+        xmlns:rendering="clr-namespace:LuciLink.Client.Rendering"
         mc:Ignorable="d"
         Title="{Binding WindowTitle}" Height="900" Width="460"
         MinWidth="400" MinHeight="600"
@@ -423,7 +424,7 @@
                 <!-- ===== 비디오 영역 ===== -->
                 <Border Grid.Row="2" Background="#0A0A0A">
                     <Grid>
-                        <Image x:Name="VideoImage" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"
+                        <Image x:Name="VideoImage" Source="{Binding VideoSource}" Stretch="Uniform" RenderOptions.BitmapScalingMode="HighQuality"
                                AllowDrop="True" DragEnter="OnDragEnter" DragLeave="OnDragLeave" Drop="OnDrop"/>
 
                         <!-- 연결 전 안내 (플레이스홀더) -->
@@ -500,6 +501,89 @@
                                      Height="160" Width="290" Padding="10,8"
                                      Visibility="{Binding IsLogVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
                         </Border>
+
+                        <!-- ===== AI 리포트 모드 오버레이 ===== -->
+                        <Grid Visibility="{Binding Report.IsReportModeVisible}">
+                            <!-- 캡처된 스크린샷 (정적 이미지) -->
+                            <Image Source="{Binding Report.CapturedScreenshot}" Stretch="Uniform" 
+                                   RenderOptions.BitmapScalingMode="HighQuality"/>
+
+                            <!-- 투명 어노테이션 캔버스 -->
+                            <rendering:ReportOverlayCanvas x:Name="ReportCanvas" Background="Transparent"
+                                                       MouseLeftButtonDown="OnReportCanvasClick"/>
+
+                            <!-- 상단 상태 메시지 -->
+                            <Border VerticalAlignment="Top" HorizontalAlignment="Center" 
+                                    Background="#E61A1A1E" CornerRadius="0,0,10,10" Padding="16,8" Margin="0">
+                                <TextBlock Text="{Binding Report.StatusMessage}" 
+                                           FontSize="12" Foreground="#CCCCCC"
+                                           FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                            </Border>
+
+                            <!-- 우측 패널: 선택된 UI 요소 정보 -->
+                            <Border HorizontalAlignment="Right" Width="220" 
+                                    Background="#F0FFFFFF" Margin="0"
+                                    Visibility="{Binding Report.IsPanelVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
+                                <Border.Effect>
+                                    <DropShadowEffect BlurRadius="12" ShadowDepth="-2" Opacity="0.15" Direction="0"/>
+                                </Border.Effect>
+                                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="12,14">
+                                    <StackPanel>
+                                        <TextBlock Text="{DynamicResource Report.AnnoPanel}" FontSize="13" FontWeight="SemiBold"
+                                                   Foreground="{StaticResource TextPrimaryBrush}" Margin="0,0,0,12"
+                                                   FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+
+                                        <TextBox Text="{Binding Report.SelectedElementInfo, Mode=OneWay}"
+                                                 Background="Transparent" Foreground="{StaticResource TextPrimaryBrush}" 
+                                                 BorderThickness="0" FontSize="11" 
+                                                 FontFamily="Cascadia Code, Consolas, Courier New"
+                                                 IsReadOnly="True" TextWrapping="Wrap" 
+                                                 AcceptsReturn="True" MaxHeight="200"/>
+
+                                        <Border Height="1" Background="{StaticResource BorderBrush}" Margin="0,12,0,12"/>
+
+                                        <TextBlock Text="{DynamicResource Report.Memo.Label}" FontSize="11" FontWeight="Medium"
+                                                   Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,6"
+                                                   FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+
+                                        <TextBox x:Name="ReportMemoBox" Style="{StaticResource InputFieldStyle}"
+                                                 TextWrapping="Wrap" AcceptsReturn="True" Height="80"
+                                                 FontSize="11" TextChanged="OnReportMemoChanged"/>
+                                    </StackPanel>
+                                </ScrollViewer>
+                            </Border>
+
+                            <!-- 하단 리포트 제어 바 -->
+                            <Border VerticalAlignment="Bottom" Background="#F0FFFFFF" 
+                                    Padding="12,10" BorderBrush="{StaticResource BorderBrush}" 
+                                    BorderThickness="0,1,0,0">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <TextBlock Grid.Column="0" FontSize="11" 
+                                               Foreground="{StaticResource TextSecondaryBrush}"
+                                               VerticalAlignment="Center"
+                                               FontFamily="Segoe UI Variable, Segoe UI, sans-serif">
+                                        <Run Text="{DynamicResource Report.AnnotationCount}"/>
+                                        <Run Text=": "/>
+                                        <Run Text="{Binding Report.Annotations.Count, Mode=OneWay}" FontWeight="SemiBold"/>
+                                    </TextBlock>
+
+                                    <Button Grid.Column="1" Content="{DynamicResource Report.Mode.Exit}" 
+                                            Command="{Binding Report.ExitReportModeCommand}" 
+                                            Style="{StaticResource LinkButtonStyle}"
+                                            Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,12,0"/>
+
+                                    <Button Grid.Column="2" Content="{DynamicResource Report.Generate}" 
+                                            Command="{Binding Report.GenerateReportCommand}" Foreground="White"
+                                            Style="{StaticResource ConnectButtonStyle}" Padding="20,8"/>
+                                </Grid>
+                            </Border>
+                        </Grid>
 
                         <!-- ===== 프로필 패널 오버레이 ===== -->
                         <Border x:Name="ProfilePanel" Background="#CC000000" 

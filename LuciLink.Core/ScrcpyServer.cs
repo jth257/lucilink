@@ -23,7 +23,9 @@ public class ScrcpyServer
         await _adb.PushFileAsync(deviceSerial, localServerPath, DEVICE_SERVER_PATH).ConfigureAwait(false);
     }
 
-    public async Task<System.Diagnostics.Process> StartServerAsync(string deviceSerial, int width, int height)
+    public async Task<System.Diagnostics.Process> StartServerAsync(
+        string deviceSerial, int maxSize = 0, int bitrate = 8000000,
+        int maxFps = 60, string? videoEncoder = null)
     {
         // 이전 scrcpy 서버 정리 시도 (실패해도 무방 - 랜덤 scid 사용하므로)
         try 
@@ -48,12 +50,16 @@ public class ScrcpyServer
                      "audio=false " +
                      "control=true " +
                      "cleanup=false " +
-                     "max_size=0 " +
-                     "video_bit_rate=8000000 " +
-                     "max_fps=60 " +
+                     $"max_size={maxSize} " +
+                     $"video_bit_rate={bitrate} " +
+                     $"max_fps={maxFps} " +
                      "send_dummy_byte=true " +
                      "send_codec_meta=true " +
                      "send_device_meta=true";
+
+        // 인코더 지정 시 추가 (예: OMX.google.h264.encoder)
+        if (!string.IsNullOrEmpty(videoEncoder))
+            cmd += $" video_encoder={videoEncoder}";
         
         return _adb.StartProcess(cmd);
     }

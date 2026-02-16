@@ -162,6 +162,8 @@ public class InputManager
     {
         if (!_sender.IsConnected) return;
         if (string.IsNullOrEmpty(e.Text)) return;
+        // TextBox 등 입력 컨트롤에 포커스가 있으면 안드로이드로 보내지 않음
+        if (IsInputControlFocused()) return;
 
         // 일반 ASCII (영문, 숫자, 특수문자)는 키코드로 처리되므로 스킵
         // 한글, 일본어, 중국어 등 비-ASCII 문자만 텍스트 주입으로 처리
@@ -182,6 +184,8 @@ public class InputManager
     private async void OnKeyDown(object sender, KeyEventArgs e)
     {
         if (!_sender.IsConnected) return;
+        // TextBox 등 입력 컨트롤에 포커스가 있으면 안드로이드로 보내지 않음
+        if (IsInputControlFocused()) return;
 
         // IME에서 이미 처리된 키는 무시
         if (e.Key == Key.ImeProcessed) return;
@@ -197,6 +201,7 @@ public class InputManager
     private async void OnKeyUp(object sender, KeyEventArgs e)
     {
         if (!_sender.IsConnected) return;
+        if (IsInputControlFocused()) return;
         if (e.Key == Key.ImeProcessed) return;
 
         int keyCode = MapKeyToAndroid(e.Key);
@@ -205,6 +210,15 @@ public class InputManager
             await _sender.InjectKeyAsync(1, keyCode, 0);
             e.Handled = true;
         }
+    }
+
+    /// <summary>TextBox 등 텍스트 입력 컨트롤에 포커스가 있는지 확인</summary>
+    private bool IsInputControlFocused()
+    {
+        var focused = Keyboard.FocusedElement;
+        return focused is System.Windows.Controls.TextBox
+            || focused is System.Windows.Controls.RichTextBox
+            || focused is System.Windows.Controls.PasswordBox;
     }
     
     private static int MapKeyToAndroid(Key key) => key switch
