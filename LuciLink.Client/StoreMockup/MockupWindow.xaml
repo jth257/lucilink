@@ -1,0 +1,299 @@
+<Window x:Class="LuciLink.Client.StoreMockup.MockupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:LuciLink.Client"
+        Title="Store Mockup Generator — LuciLink"
+        Width="960" Height="720"
+        MinWidth="720" MinHeight="540"
+        WindowStartupLocation="CenterScreen"
+        Background="#F5F5F7">
+
+    <Window.Resources>
+        <!-- 배경 프리셋 라디오 버튼 스타일 -->
+        <Style x:Key="PresetRadioStyle" TargetType="RadioButton">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="bd" CornerRadius="10" Height="52"
+                                BorderThickness="2.5" BorderBrush="Transparent" Padding="2">
+                            <ContentPresenter/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#3F51B5"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Opacity" Value="0.85"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 저장 버튼 스타일 -->
+        <Style x:Key="SaveButtonStyle" TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, sans-serif"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="bd" CornerRadius="10" Padding="0,14"
+                                Background="#3F51B5" BorderThickness="0">
+                            <Border.Effect>
+                                <DropShadowEffect BlurRadius="12" ShadowDepth="3" Opacity="0.25"
+                                                  Color="#3F51B5" Direction="270"/>
+                            </Border.Effect>
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#5C6BC0"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="bd" Property="Background" Value="#303F9F"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 텍스트 입력 스타일 -->
+        <Style x:Key="MockupInputStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="Foreground" Value="#1D1D1F"/>
+            <Setter Property="BorderBrush" Value="#E8E8ED"/>
+            <Setter Property="BorderThickness" Value="1.5"/>
+            <Setter Property="Padding" Value="12,10"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable, Segoe UI, sans-serif"/>
+            <Setter Property="CaretBrush" Value="#3F51B5"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border x:Name="bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="10" Padding="{TemplateBinding Padding}">
+                            <ScrollViewer x:Name="PART_ContentHost" Focusable="false"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsFocused" Value="True">
+                                <Setter TargetName="bd" Property="BorderBrush" Value="#3F51B5"/>
+                                <Setter TargetName="bd" Property="BorderThickness" Value="2"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- ===== 좌측: 컨트롤 패널 ===== -->
+        <Border Grid.Column="0" Background="White" BorderBrush="#E8E8ED" BorderThickness="0,0,1,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="20">
+                    <!-- 타이틀 -->
+                    <TextBlock Text="📱 스토어 목업" FontSize="18" FontWeight="Bold"
+                               Foreground="#1D1D1F" Margin="0,0,0,4"
+                               FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                    <TextBlock Text="Google Play 1080 × 1920" FontSize="11"
+                               Foreground="#86868B" Margin="0,0,0,28"
+                               FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+
+                    <!-- 배경 스타일 -->
+                    <TextBlock Text="배경 스타일" FontSize="13" FontWeight="SemiBold"
+                               Foreground="#1D1D1F" Margin="0,0,0,10"
+                               FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+
+                    <!-- Preset 0: Soft Lavender -->
+                    <RadioButton GroupName="bg" IsChecked="True" Tag="0"
+                                 Style="{StaticResource PresetRadioStyle}"
+                                 Checked="OnBackgroundChanged">
+                        <Border CornerRadius="8">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#E8DEF8" Offset="0"/>
+                                    <GradientStop Color="#BBDEFB" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <TextBlock Text="Soft Lavender" FontSize="11" FontWeight="Medium"
+                                       Foreground="#555" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                        </Border>
+                    </RadioButton>
+
+                    <!-- Preset 1: Mint Breeze -->
+                    <RadioButton GroupName="bg" Tag="1"
+                                 Style="{StaticResource PresetRadioStyle}"
+                                 Checked="OnBackgroundChanged">
+                        <Border CornerRadius="8">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#C8E6C9" Offset="0"/>
+                                    <GradientStop Color="#B2EBF2" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <TextBlock Text="Mint Breeze" FontSize="11" FontWeight="Medium"
+                                       Foreground="#555" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                        </Border>
+                    </RadioButton>
+
+                    <!-- Preset 2: Warm Sunset -->
+                    <RadioButton GroupName="bg" Tag="2"
+                                 Style="{StaticResource PresetRadioStyle}"
+                                 Checked="OnBackgroundChanged">
+                        <Border CornerRadius="8">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#FFCCBC" Offset="0"/>
+                                    <GradientStop Color="#FFE0B2" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <TextBlock Text="Warm Sunset" FontSize="11" FontWeight="Medium"
+                                       Foreground="#555" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                        </Border>
+                    </RadioButton>
+
+                    <!-- Preset 3: Ocean Blue -->
+                    <RadioButton GroupName="bg" Tag="3"
+                                 Style="{StaticResource PresetRadioStyle}"
+                                 Checked="OnBackgroundChanged">
+                        <Border CornerRadius="8">
+                            <Border.Background>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                    <GradientStop Color="#BBDEFB" Offset="0"/>
+                                    <GradientStop Color="#E1BEE7" Offset="1"/>
+                                </LinearGradientBrush>
+                            </Border.Background>
+                            <TextBlock Text="Ocean Blue" FontSize="11" FontWeight="Medium"
+                                       Foreground="#555" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                        </Border>
+                    </RadioButton>
+
+                    <!-- 마케팅 문구 -->
+                    <TextBlock Text="마케팅 문구" FontSize="13" FontWeight="SemiBold"
+                               Foreground="#1D1D1F" Margin="0,24,0,6"
+                               FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                    <TextBlock Text="스크린샷 상단에 표시됩니다" FontSize="11"
+                               Foreground="#86868B" Margin="0,0,0,8"
+                               FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                    <TextBox Text="{Binding MarketingText, UpdateSourceTrigger=PropertyChanged}"
+                             Style="{StaticResource MockupInputStyle}"
+                             TextWrapping="Wrap" AcceptsReturn="True" Height="80"
+                             VerticalContentAlignment="Top"/>
+
+                    <!-- 저장 버튼 -->
+                    <Button Content="💾 고화질 PNG 저장" Click="OnSaveClick"
+                            Style="{StaticResource SaveButtonStyle}"
+                            Margin="0,28,0,0" HorizontalAlignment="Stretch"/>
+
+                    <!-- 상태 텍스트 -->
+                    <TextBlock Text="{Binding StatusText}" FontSize="11"
+                               Foreground="#86868B" Margin="0,12,0,0"
+                               TextWrapping="Wrap"
+                               FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+
+                    <!-- 도움말 -->
+                    <Border Background="#FAFAFA" CornerRadius="10" Padding="12,10" Margin="0,20,0,0">
+                        <TextBlock FontSize="10" Foreground="#86868B" TextWrapping="Wrap" LineHeight="16"
+                                   FontFamily="Segoe UI Variable, Segoe UI, sans-serif">
+                            <Run FontWeight="SemiBold">📋 출력 규격</Run><LineBreak/>
+                            <Run>1080 × 1920 px (Google Play)</Run><LineBreak/>
+                            <Run>DPI 독립적 고해상도 렌더링</Run><LineBreak/>
+                            <Run>바탕화면에 PNG로 저장됩니다</Run>
+                        </TextBlock>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+
+        <!-- ===== 우측: 미리보기 ===== -->
+        <Border Grid.Column="1" Background="#F0F0F2" Padding="24">
+            <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
+                <Canvas Width="1080" Height="1920" ClipToBounds="True">
+                    <!-- Layer 1: 배경 그라데이션 -->
+                    <Rectangle Width="1080" Height="1920" Fill="{Binding SelectedBackground}"/>
+
+                    <!-- 폰 그림자 -->
+                    <Rectangle Canvas.Left="238" Canvas.Top="376"
+                               Width="620" Height="1300"
+                               RadiusX="52" RadiusY="52" Fill="#20000000"/>
+
+                    <!-- 폰 본체 -->
+                    <Rectangle Canvas.Left="230" Canvas.Top="360"
+                               Width="620" Height="1300"
+                               RadiusX="48" RadiusY="48"
+                               Stroke="#28FFFFFF" StrokeThickness="1.5">
+                        <Rectangle.Fill>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#2A2A2E" Offset="0"/>
+                                <GradientStop Color="#1A1A1E" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Rectangle.Fill>
+                    </Rectangle>
+
+                    <!-- 스크린 영역 (검정 배경 — 레터박스 대비) -->
+                    <Rectangle Canvas.Left="244" Canvas.Top="392"
+                               Width="592" Height="1236"
+                               RadiusX="14" RadiusY="14" Fill="Black"/>
+
+                    <!-- Layer 2: 앱 스크린샷 (스크린 영역에 클리핑) -->
+                    <Image Source="{Binding Screenshot}"
+                           Canvas.Left="244" Canvas.Top="392"
+                           Width="592" Height="1236"
+                           Stretch="Uniform"
+                           RenderOptions.BitmapScalingMode="HighQuality">
+                        <Image.Clip>
+                            <RectangleGeometry Rect="0,0,592,1236" RadiusX="14" RadiusY="14"/>
+                        </Image.Clip>
+                    </Image>
+
+                    <!-- 카메라 필 (노치) -->
+                    <Rectangle Canvas.Left="512" Canvas.Top="374"
+                               Width="56" Height="10"
+                               RadiusX="5" RadiusY="5" Fill="#181818"/>
+
+                    <!-- Layer 4: 마케팅 문구 (상단 여백 중앙) -->
+                    <Border Canvas.Left="60" Canvas.Top="20" Width="960" Height="320">
+                        <TextBlock Text="{Binding MarketingText}"
+                                   FontSize="54" FontWeight="Bold" Foreground="#2D2D2D"
+                                   TextAlignment="Center" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" HorizontalAlignment="Center"
+                                   FontFamily="Segoe UI Variable, Segoe UI, sans-serif">
+                            <TextBlock.Effect>
+                                <DropShadowEffect BlurRadius="8" ShadowDepth="2"
+                                                  Opacity="0.1" Color="Black" Direction="270"/>
+                            </TextBlock.Effect>
+                        </TextBlock>
+                    </Border>
+
+                    <!-- Layer 5: 워터마크 (폰 우하단 모서리에 겹치도록) -->
+                    <Border Canvas.Left="580" Canvas.Top="1624"
+                            Visibility="{Binding IsFreeUser, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
+                        <Border Background="#64000000" CornerRadius="6" Padding="10,4">
+                            <TextBlock Text="⚡ Created by LuciLink"
+                                       FontSize="20" Foreground="#A0FFFFFF" FontWeight="SemiBold"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                        </Border>
+                    </Border>
+                </Canvas>
+            </Viewbox>
+        </Border>
+    </Grid>
+</Window>

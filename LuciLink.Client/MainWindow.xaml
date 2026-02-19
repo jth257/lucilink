@@ -877,6 +877,9 @@
                         <Button DockPanel.Dock="Left" Command="{Binding Settings.TogglePanelCommand}" 
                                 Content="⚙" ToolTip="{DynamicResource Settings.Tooltip}"
                                 Style="{StaticResource ToolButtonStyle}" Margin="0,0,4,0"/>
+                        <Button DockPanel.Dock="Left" Command="{Binding OpenMockupCommand}" 
+                                Content="📱 Mockup" ToolTip="Store Mockup Generator"
+                                Style="{StaticResource ToolButtonStyle}" Margin="0,0,4,0"/>
                         <Button DockPanel.Dock="Right" Command="{Binding ToggleLogCommand}" Content="{DynamicResource Tool.Log}" 
                                 Style="{StaticResource ToolButtonStyle}" Margin="4,0,0,0"/>
                         <Button Content="{Binding ConnectButtonText}" 

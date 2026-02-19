@@ -10,6 +10,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 using FFmpeg.AutoGen;
 using LuciLink.Client.Rendering;
+using LuciLink.Client.StoreMockup;
 using LuciLink.Core.Adb;
 using LuciLink.Core.Control;
 using LuciLink.Core.Decoding;
@@ -181,6 +182,7 @@ public class MainViewModel : ViewModelBase
     public ICommand CopyReportCommand { get; }
     public ICommand ToggleLogCommand { get; }
     public ICommand ToggleLanguageCommand { get; }
+    public ICommand OpenMockupCommand { get; }
 
     #endregion
 
@@ -234,6 +236,7 @@ public class MainViewModel : ViewModelBase
         CopyReportCommand = new AsyncRelayCommand(() => Report.EnterReportModeAsync());
         ToggleLogCommand = new RelayCommand(() => IsLogVisible = !IsLogVisible);
         ToggleLanguageCommand = new RelayCommand(OnToggleLanguage);
+        OpenMockupCommand = new RelayCommand(OnOpenMockup);
 
         ConnectButtonText = LocalizationManager.Get("Button.Connect");
         StatusText = LocalizationManager.Get("Status.Disconnected");
@@ -1055,6 +1058,23 @@ public class MainViewModel : ViewModelBase
         encoder.Frames.Add(BitmapFrame.Create(bitmap));
         using var fs = new FileStream(path, FileMode.Create);
         encoder.Save(fs);
+    }
+
+    #endregion
+
+    #region Store Mockup
+
+    private void OnOpenMockup()
+    {
+        if (VideoSource is not BitmapSource bitmap)
+        {
+            MessageBox.Show(LocalizationManager.Get("Msg.NoCaptureSource"));
+            return;
+        }
+
+        bool isFreeUser = _currentSubStatus != "active" && _currentSubStatus != "subscribed";
+        var window = new MockupWindow(bitmap, isFreeUser);
+        window.Show();
     }
 
     #endregion
