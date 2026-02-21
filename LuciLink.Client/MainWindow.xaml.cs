@@ -28,6 +28,10 @@ public partial class MainWindow : Window
 
         InitializeComponent();
 
+        // 버전 표시
+        var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+        VersionText.Text = $"v{version?.Major}.{version?.Minor}.{version?.Build}";
+
         FFmpegBinariesHelper.RegisterFFmpegBinaries();
 
         // VideoImage 컨트롤 참조 전달 (InputManager용)

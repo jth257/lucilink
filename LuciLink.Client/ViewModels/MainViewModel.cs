@@ -949,7 +949,19 @@ public class MainViewModel : ViewModelBase
             // WriteableBitmap은 실시간 업데이트되므로 스냅샷을 깊은 복사
             var snapshot = CopyBitmap(bitmap);
 
-            Clipboard.SetImage(snapshot);
+            // DataObject로 DIB + PNG 스트림 형식 모두 설정
+            // (Clipboard.SetImage만 사용하면 BGRA32 alpha 채널 문제로 빈 이미지가 됨)
+            var dataObj = new DataObject();
+            dataObj.SetImage(snapshot);
+
+            var pngStream = new MemoryStream();
+            var pngEncoder = new PngBitmapEncoder();
+            pngEncoder.Frames.Add(BitmapFrame.Create(snapshot));
+            pngEncoder.Save(pngStream);
+            pngStream.Position = 0;
+            dataObj.SetData("PNG", pngStream);
+
+            Clipboard.SetDataObject(dataObj, true);
             Log("Screenshot copied to clipboard!");
 
             var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "LuciLink");
@@ -958,6 +970,10 @@ public class MainViewModel : ViewModelBase
 
             SaveBitmapToPng(snapshot, filePath);
             Log($"Saved: {filePath}");
+
+            MessageBox.Show(
+                LocalizationManager.Get("Msg.CaptureSuccess"),
+                LocalizationManager.Get("Msg.CaptureTitle"));
         }
         catch (Exception ex)
         {

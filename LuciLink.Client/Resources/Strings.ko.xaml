@@ -63,6 +63,8 @@
     <sys:String x:Key="Msg.ApkOnly">APK 파일만 설치할 수 있습니다.</sys:String>
     <sys:String x:Key="Msg.ConnectFirst">먼저 기기를 연결하세요.</sys:String>
     <sys:String x:Key="Msg.NoCaptureSource">캡처할 화면이 없습니다.</sys:String>
+    <sys:String x:Key="Msg.CaptureSuccess">스크린샷이 클립보드에 복사되었습니다!</sys:String>
+    <sys:String x:Key="Msg.CaptureTitle">캡처 완료</sys:String>
 
     <!-- ===== 구독/체험 메시지 ===== -->
     <sys:String x:Key="Msg.TrialRequired">무료 체험을 먼저 시작해주세요.&#x0a;프로필에서 '체험 시작'을 눌러주세요.</sys:String>

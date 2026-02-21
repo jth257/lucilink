@@ -926,6 +926,11 @@
                                            Foreground="#E8EAF6" LineHeight="16" TextWrapping="Wrap"
                                            FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
                             </Border>
+
+                            <!-- 버전 정보 -->
+                            <TextBlock x:Name="VersionText" FontSize="10" Foreground="#8C9EFF" 
+                                       Margin="0,16,0,0" Opacity="0.7"
+                                       FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
                         </StackPanel>
                     </Grid>
                 </Border>

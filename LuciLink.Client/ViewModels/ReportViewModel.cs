@@ -381,23 +381,10 @@ public class ReportViewModel : ViewModelBase
             report.AppendLine("*위 정보를 분석하여 UI 수정 방법을 구체적으로 제안해주세요. " +
                               "각 요소의 Bounds와 메모를 참고하세요.*");
 
-            // 6. 클립보드에 복사 (PNG 포맷 포함 — 웹 앱 호환)
-            var clipImage = modifiedImage ?? CapturedScreenshot;
-            var dataObj = new DataObject();
-            if (clipImage != null)
-            {
-                // DIB 형식 (기본 Windows 앱 호환)
-                dataObj.SetImage(clipImage);
-                // PNG 스트림 형식 (웹 앱 — Gemini, ChatGPT 등 호환)
-                var pngStream = new MemoryStream();
-                var pngEncoder = new PngBitmapEncoder();
-                pngEncoder.Frames.Add(BitmapFrame.Create(clipImage));
-                pngEncoder.Save(pngStream);
-                pngStream.Position = 0;
-                dataObj.SetData("PNG", pngStream);
-            }
-            dataObj.SetText(report.ToString());
-            Clipboard.SetDataObject(dataObj, true);
+            // 6. 클립보드에 텍스트만 복사
+            // (이미지+텍스트 동시 설정 시 웹 AI 도구에서 이미지만 붙여넣어지는 문제 방지)
+            // 이미지는 파일로 저장되며, 경로가 리포트 텍스트에 포함됨
+            Clipboard.SetText(report.ToString());
 
             // 7. 파일로도 저장
             var reportDir = Path.Combine(

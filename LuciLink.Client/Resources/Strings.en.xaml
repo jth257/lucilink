@@ -63,6 +63,8 @@
     <sys:String x:Key="Msg.ApkOnly">Only APK files can be installed.</sys:String>
     <sys:String x:Key="Msg.ConnectFirst">Please connect a device first.</sys:String>
     <sys:String x:Key="Msg.NoCaptureSource">No screen to capture.</sys:String>
+    <sys:String x:Key="Msg.CaptureSuccess">Screenshot copied to clipboard!</sys:String>
+    <sys:String x:Key="Msg.CaptureTitle">Capture Complete</sys:String>
 
     <!-- ===== Subscription/Trial Messages ===== -->
     <sys:String x:Key="Msg.TrialRequired">Please start your free trial first.&#x0a;Tap 'Start Trial' in your profile.</sys:String>
