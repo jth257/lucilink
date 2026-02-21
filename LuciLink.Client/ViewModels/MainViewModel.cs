@@ -944,15 +944,26 @@ public class MainViewModel : ViewModelBase
             return;
         }
 
-        Clipboard.SetImage(bitmap is BitmapSource bs ? bs : CopyBitmap(bitmap));
-        Log("Screenshot copied to clipboard!");
+        try
+        {
+            // WriteableBitmap은 실시간 업데이트되므로 스냅샷을 깊은 복사
+            var snapshot = CopyBitmap(bitmap);
 
-        var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "LuciLink");
-        Directory.CreateDirectory(dir);
-        var filePath = Path.Combine(dir, $"capture_{DateTime.Now:yyyyMMdd_HHmmss}.png");
+            Clipboard.SetImage(snapshot);
+            Log("Screenshot copied to clipboard!");
 
-        SaveBitmapToPng(bitmap, filePath);
-        Log($"Saved: {filePath}");
+            var dir = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures), "LuciLink");
+            Directory.CreateDirectory(dir);
+            var filePath = Path.Combine(dir, $"capture_{DateTime.Now:yyyyMMdd_HHmmss}.png");
+
+            SaveBitmapToPng(snapshot, filePath);
+            Log($"Saved: {filePath}");
+        }
+        catch (Exception ex)
+        {
+            Log($"Capture failed: {ex.Message}");
+            MessageBox.Show($"Capture failed: {ex.Message}");
+        }
     }
 
     private async Task OnCopyReport()
