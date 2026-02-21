@@ -177,6 +177,19 @@ public class ProfileViewModel : ViewModelBase
 
     public void UpdateSubscriptionUI()
     {
+        // === BETA MODE: 베타 테스트 기간 동안 모든 기능 무료 ===
+        const bool IS_BETA = true;
+        if (IS_BETA)
+        {
+            SubStatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00D68F"));
+            SubStatusText = "🧪 베타 테스트 중";
+            IsTrialCardVisible = false;
+            PlanName = "Beta (무료)";
+            IsSubscribeVisible = false;
+            return;
+        }
+        // === END BETA MODE ===
+
         switch (_subscriptionStatus)
         {
             case "subscribed":

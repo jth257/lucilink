@@ -72,7 +72,7 @@ public class MainViewModel : ViewModelBase
     private bool _isDropOverlayVisible;
     private bool _isInstallOverlayVisible;
     private string _installStatusText = "";
-    private string _windowTitle = "LuciLink";
+    private string _windowTitle = "LuciLink (BETA)";
 
     // Supabase 인증
     private readonly SupabaseAuthService _authService;
@@ -440,7 +440,7 @@ public class MainViewModel : ViewModelBase
 
             _dispatcher.Invoke(() =>
             {
-                WindowTitle = $"LuciLink - {deviceName}";
+                WindowTitle = $"LuciLink (BETA) - {deviceName}";
                 ConnectButtonText = "Disconnect";
                 CanConnect = true;
                 IsPlaceholderVisible = false;
@@ -468,7 +468,7 @@ public class MainViewModel : ViewModelBase
         Cleanup();
 
         VideoSource = null;
-        WindowTitle = "LuciLink";
+        WindowTitle = "LuciLink (BETA)";
         ConnectButtonText = LocalizationManager.Get("Button.Connect");
         CanConnect = true;
         IsPlaceholderVisible = true;
@@ -482,7 +482,7 @@ public class MainViewModel : ViewModelBase
         if (_isRunning) Cleanup();
 
         VideoSource = null;
-        WindowTitle = "LuciLink";
+        WindowTitle = "LuciLink (BETA)";
         ConnectButtonText = LocalizationManager.Get("Button.Connect");
         CanConnect = true;
         IsPlaceholderVisible = true;
@@ -750,7 +750,7 @@ public class MainViewModel : ViewModelBase
         Cleanup();
 
         VideoSource = null;
-        WindowTitle = "LuciLink";
+        WindowTitle = "LuciLink (BETA)";
         ConnectButtonText = LocalizationManager.Get("Button.Connect");
         CanConnect = true;
         IsPlaceholderVisible = true;
