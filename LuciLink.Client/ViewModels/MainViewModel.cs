@@ -1070,13 +1070,24 @@ public class MainViewModel : ViewModelBase
 
     private static BitmapSource CopyBitmap(BitmapSource source)
     {
-        var encoder = new PngBitmapEncoder();
-        encoder.Frames.Add(BitmapFrame.Create(source));
-        using var ms = new MemoryStream();
-        encoder.Save(ms);
-        ms.Position = 0;
-        var decoder = new PngBitmapDecoder(ms, BitmapCreateOptions.None, BitmapCacheOption.OnLoad);
-        return decoder.Frames[0];
+        // WriteableBitmap(BGRA32)에서 alpha가 0일 수 있으므로
+        // 픽셀을 직접 복사하면서 alpha를 255(불투명)로 강제 설정
+        int width = source.PixelWidth;
+        int height = source.PixelHeight;
+        int stride = width * 4; // BGRA = 4 bytes per pixel
+        byte[] pixels = new byte[stride * height];
+        source.CopyPixels(pixels, stride, 0);
+
+        // Alpha 채널 강제 설정 (B=0, G=1, R=2, A=3)
+        for (int i = 3; i < pixels.Length; i += 4)
+            pixels[i] = 255;
+
+        var result = BitmapSource.Create(
+            width, height, 96, 96,
+            System.Windows.Media.PixelFormats.Bgra32, null,
+            pixels, stride);
+        result.Freeze();
+        return result;
     }
 
     private static void SaveBitmapToPng(BitmapSource bitmap, string path)
