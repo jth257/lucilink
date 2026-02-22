@@ -22,6 +22,10 @@ public class ProfileViewModel : ViewModelBase
     private bool _isPanelVisible;
     private bool _isTrialActivationVisible; // 체험 시작 확인 다이얼로그
     private bool _isYearlyPlan;
+    private DateTime? _userCreatedAt; // 사용자 가입일 (베타 테스터 판별용)
+    private BetaTesterStatus? _betaStatus; // 베타 테스터 상태
+    private string _feedbackStatusText = "";
+    private bool _isFeedbackButtonVisible;
 
     public string UserName
     {
@@ -101,6 +105,18 @@ public class ProfileViewModel : ViewModelBase
 
     public string SelectedPlanSlug => _isYearlyPlan ? "lucilink-yearly" : "lucilink";
 
+    public string FeedbackStatusText
+    {
+        get => _feedbackStatusText;
+        set => SetProperty(ref _feedbackStatusText, value);
+    }
+
+    public bool IsFeedbackButtonVisible
+    {
+        get => _isFeedbackButtonVisible;
+        set => SetProperty(ref _isFeedbackButtonVisible, value);
+    }
+
     public RelayCommand TogglePanelCommand { get; }
     public RelayCommand SubscribeCommand { get; }
     public RelayCommand LogoutCommand { get; }
@@ -115,6 +131,11 @@ public class ProfileViewModel : ViewModelBase
     /// <summary>체험 활성화 요청 이벤트 (MainViewModel에서 처리)</summary>
     public event Func<Task>? TrialActivationRequested;
 
+    /// <summary>피드백 제출 요청 이벤트 (MainViewModel에서 처리)</summary>
+    public event Func<Task>? FeedbackRequested;
+
+    public RelayCommand SendFeedbackCommand { get; }
+
     public ProfileViewModel()
     {
         TogglePanelCommand = new RelayCommand(() => IsPanelVisible = !IsPanelVisible);
@@ -122,16 +143,19 @@ public class ProfileViewModel : ViewModelBase
         LogoutCommand = new RelayCommand(() => LogoutRequested?.Invoke());
         SelectMonthlyCommand = new RelayCommand(() => IsYearlyPlan = false);
         SelectYearlyCommand = new RelayCommand(() => IsYearlyPlan = true);
+        SendFeedbackCommand = new RelayCommand(OnSendFeedback);
     }
 
     /// <summary>로그인 성공 시 프로필 업데이트</summary>
-    public void SetUser(string name, string email, string subStatus, int trialDays)
+    public void SetUser(string name, string email, string subStatus, int trialDays, DateTime? createdAt = null, BetaTesterStatus? betaStatus = null)
     {
-        System.Diagnostics.Debug.WriteLine($"[PROFILE] SetUser called: name={name}, email={email}, subStatus={subStatus}, trialDays={trialDays}");
+        System.Diagnostics.Debug.WriteLine($"[PROFILE] SetUser called: name={name}, email={email}, subStatus={subStatus}, trialDays={trialDays}, createdAt={createdAt}");
         UserName = name;
         Email = email;
         _subscriptionStatus = subStatus;
         _trialDaysLeft = trialDays;
+        _userCreatedAt = createdAt;
+        _betaStatus = betaStatus;
         UpdateSubscriptionUI();
 
         // pending 상태면 체험 시작 확인 다이얼로그 표시
@@ -177,15 +201,50 @@ public class ProfileViewModel : ViewModelBase
 
     public void UpdateSubscriptionUI()
     {
-        // === BETA MODE: 베타 테스트 기간 동안 모든 기능 무료 ===
+        // === BETA MODE ===
         const bool IS_BETA = true;
+
         if (IS_BETA)
         {
+            // 베타 기간 중: 모든 유저 무료
             SubStatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#00D68F"));
             SubStatusText = "🧪 베타 테스트 중";
             IsTrialCardVisible = false;
             PlanName = "Beta (무료)";
             IsSubscribeVisible = false;
+            IsFeedbackButtonVisible = true;
+
+            // 피드백 상태 표시
+            if (_betaStatus != null)
+            {
+                if (_betaStatus.IsLifetimeEligible)
+                    FeedbackStatusText = "🎁 평생 무료 자격 확보!";
+                else if (_betaStatus.LatestFeedbackStatus == "pending")
+                    FeedbackStatusText = "⏳ 피드백 검토 중...";
+                else if (_betaStatus.LatestFeedbackStatus == "rejected")
+                    FeedbackStatusText = "❌ 피드백이 반려됨 — 다시 작성해주세요";
+                else if (_betaStatus.LatestFeedbackStatus == "approved")
+                    FeedbackStatusText = "✅ 피드백 승인됨!";
+                else
+                    FeedbackStatusText = "💬 피드백을 보내면 평생 무료 혜택!";
+            }
+            else
+            {
+                FeedbackStatusText = "💬 피드백을 보내면 평생 무료 혜택!";
+            }
+            return;
+        }
+
+        // 베타 종료 후: 3가지 조건 모두 충족 시 평생 무료
+        if (_betaStatus != null && _betaStatus.IsLifetimeEligible)
+        {
+            SubStatusColor = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD700"));
+            SubStatusText = "🎁 평생 무료 (베타 테스터)";
+            IsTrialCardVisible = false;
+            PlanName = "Lifetime Free";
+            IsSubscribeVisible = false;
+            IsFeedbackButtonVisible = false;
+            FeedbackStatusText = "";
             return;
         }
         // === END BETA MODE ===
@@ -263,6 +322,14 @@ public class ProfileViewModel : ViewModelBase
         catch
         {
             MessageBox.Show(LocalizationManager.Get("Msg.BrowserError"));
+        }
+    }
+
+    private async void OnSendFeedback(object? _)
+    {
+        if (FeedbackRequested != null)
+        {
+            await FeedbackRequested.Invoke();
         }
     }
 }

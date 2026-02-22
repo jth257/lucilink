@@ -45,8 +45,8 @@ public class LoginViewModel : ViewModelBase
         set => SetProperty(ref _isSignupMode, value);
     }
 
-    // 로그인 성공 시 호출: Name, Email, SubStatus, TrialDaysLeft
-    public event Action<string, string, string, int>? LoginSucceeded;
+    // 로그인 성공 시 호출: Name, Email, SubStatus, TrialDaysLeft, CreatedAt
+    public event Action<string, string, string, int, DateTime?>? LoginSucceeded;
 
     public RelayCommand LoginCommand { get; }
     public RelayCommand SignupCommand { get; }
@@ -84,7 +84,8 @@ public class LoginViewModel : ViewModelBase
             _auth.UserEmail ?? "User",
             _auth.UserEmail ?? "",
             status,
-            daysLeft
+            daysLeft,
+            _auth.UserCreatedAt
         );
         return true;
     }
@@ -130,7 +131,8 @@ public class LoginViewModel : ViewModelBase
             _auth.UserEmail ?? email,
             _auth.UserEmail ?? email,
             status,
-            daysLeft
+            daysLeft,
+            _auth.UserCreatedAt
         );
     }
 

@@ -719,6 +719,19 @@
                                             Padding="0,12" Margin="0,0,0,12" HorizontalAlignment="Stretch"
                                             Visibility="{Binding Profile.IsSubscribeVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}"/>
 
+                                    <!-- 베타 피드백 섹션 -->
+                                    <StackPanel Margin="0,4,0,8"
+                                                Visibility="{Binding Profile.IsFeedbackButtonVisible, Converter={x:Static local:BoolToVisibilityConverter.Instance}}">
+                                        <TextBlock Text="{Binding Profile.FeedbackStatusText}" 
+                                                   FontSize="12" Foreground="{StaticResource TextSecondaryBrush}"
+                                                   TextWrapping="Wrap" Margin="0,0,0,8" TextAlignment="Center"/>
+                                        <Button Content="🧪 피드백 보내기" 
+                                                Command="{Binding Profile.SendFeedbackCommand}"
+                                                Style="{StaticResource ToolButtonStyle}"
+                                                HorizontalAlignment="Stretch" Padding="0,10"
+                                                FontSize="13" FontWeight="SemiBold"/>
+                                    </StackPanel>
+
                                     <!-- 로그아웃 -->
                                     <Button Content="{DynamicResource Profile.Logout}" Click="OnLogout" 
                                             Style="{StaticResource LinkButtonStyle}"

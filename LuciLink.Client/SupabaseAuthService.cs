@@ -23,6 +23,9 @@ public class SupabaseAuthService
     public string? UserEmail => _session?.User?.Email;
     public string? UserId => _session?.User?.Id;
     public bool IsEmailVerified => _session?.User?.EmailConfirmedAt != null;
+    public DateTime? UserCreatedAt => _session?.User?.CreatedAt != null
+        ? DateTime.TryParse(_session.User.CreatedAt, out var dt) ? dt : null
+        : null;
 
     /// <summary>이메일/비밀번호 로그인</summary>
     public async Task<AuthResult> SignInAsync(string email, string password)
@@ -275,6 +278,98 @@ public class SupabaseAuthService
         _session = null;
         try { if (File.Exists(TokenPath)) File.Delete(TokenPath); } catch { }
     }
+
+    /// <summary>프로그램 첫 로그인 기록 (UPSERT)</summary>
+    public async Task RecordProgramLoginAsync()
+    {
+        if (_session == null) return;
+
+        var body = JsonSerializer.Serialize(new { p_device_info = Environment.MachineName });
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"{SupabaseConfig.Url}/rest/v1/rpc/record_program_login")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        request.Headers.Add("apikey", SupabaseConfig.AnonKey);
+        request.Headers.Add("Authorization", $"Bearer {_session.AccessToken}");
+
+        try
+        {
+            await Http.SendAsync(request);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[BETA] RecordProgramLogin failed: {ex.Message}");
+        }
+    }
+
+    /// <summary>피드백 제출</summary>
+    public async Task<AuthResult> SubmitFeedbackAsync(string content, string category = "general")
+    {
+        if (_session == null)
+            return new AuthResult(false, "로그인이 필요합니다.");
+
+        var body = JsonSerializer.Serialize(new
+        {
+            user_id = _session.User!.Id,
+            content,
+            category
+        });
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"{SupabaseConfig.Url}/rest/v1/beta_feedbacks")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        request.Headers.Add("apikey", SupabaseConfig.AnonKey);
+        request.Headers.Add("Authorization", $"Bearer {_session.AccessToken}");
+        request.Headers.Add("Prefer", "return=minimal");
+
+        try
+        {
+            var response = await Http.SendAsync(request);
+            if (!response.IsSuccessStatusCode)
+            {
+                var json = await response.Content.ReadAsStringAsync();
+                System.Diagnostics.Debug.WriteLine($"[BETA] SubmitFeedback failed: {json}");
+                return new AuthResult(false, "피드백 제출에 실패했습니다.");
+            }
+            return new AuthResult(true, null);
+        }
+        catch (Exception ex)
+        {
+            return new AuthResult(false, $"네트워크 오류: {ex.Message}");
+        }
+    }
+
+    /// <summary>베타 테스터 상태 확인 (3가지 조건)</summary>
+    public async Task<BetaTesterStatus?> CheckBetaTesterStatusAsync()
+    {
+        if (_session == null) return null;
+
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"{SupabaseConfig.Url}/rest/v1/rpc/check_beta_tester_status")
+        {
+            Content = new StringContent("{}", Encoding.UTF8, "application/json")
+        };
+        request.Headers.Add("apikey", SupabaseConfig.AnonKey);
+        request.Headers.Add("Authorization", $"Bearer {_session.AccessToken}");
+
+        try
+        {
+            var response = await Http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            System.Diagnostics.Debug.WriteLine($"[BETA] Status: {json}");
+
+            if (!response.IsSuccessStatusCode) return null;
+
+            return JsonSerializer.Deserialize<BetaTesterStatus>(json);
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[BETA] CheckStatus failed: {ex.Message}");
+            return null;
+        }
+    }
 }
 
 #region DTOs
@@ -379,6 +474,21 @@ public class TrialRpcResponse
 
     [JsonPropertyName("already_activated")]
     public bool AlreadyActivated { get; set; }
+}
+
+public class BetaTesterStatus
+{
+    [JsonPropertyName("has_program_login")]
+    public bool HasProgramLogin { get; set; }
+
+    [JsonPropertyName("has_approved_feedback")]
+    public bool HasApprovedFeedback { get; set; }
+
+    [JsonPropertyName("is_lifetime_eligible")]
+    public bool IsLifetimeEligible { get; set; }
+
+    [JsonPropertyName("latest_feedback_status")]
+    public string? LatestFeedbackStatus { get; set; }
 }
 
 #endregion

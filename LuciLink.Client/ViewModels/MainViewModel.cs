@@ -211,15 +211,25 @@ public class MainViewModel : ViewModelBase
         // 리포트 로그 연결
         Report.LogMessage += msg => Log(msg);
 
-        // 로그인 성공 → 프로필 업데이트 + 구독 상태 동기화
-        Login.LoginSucceeded += (name, email, subStatus, trialDays) =>
+        // 로그인 성공 → 프로필 업데이트 + 구독 상태 동기화 + 베타 처리
+        Login.LoginSucceeded += async (name, email, subStatus, trialDays, createdAt) =>
         {
             _currentSubStatus = subStatus ?? "pending";
-            Profile.SetUser(name, email, subStatus, trialDays);
+
+            // 프로그램 로그인 기록 (첫 로그인만 UPSERT)
+            await _authService.RecordProgramLoginAsync();
+
+            // 베타 테스터 상태 확인
+            var betaStatus = await _authService.CheckBetaTesterStatusAsync();
+
+            Profile.SetUser(name, email, subStatus, trialDays, createdAt, betaStatus);
         };
 
         // 체험 활성화 확인 → activate_trial() RPC 호출
         Profile.TrialActivationRequested += OnTrialActivationAsync;
+
+        // 피드백 제출
+        Profile.FeedbackRequested += OnFeedbackAsync;
 
         // 로그아웃
         Profile.LogoutRequested += OnLogout;
@@ -580,6 +590,60 @@ public class MainViewModel : ViewModelBase
             MessageBox.Show(
                 $"{LocalizationManager.Get("Msg.TrialActivationFailed")}\n{result.Status}",
                 LocalizationManager.Get("Msg.Error"));
+        }
+    }
+
+    /// <summary>피드백 제출 다이얼로그</summary>
+    private async Task OnFeedbackAsync()
+    {
+        // 카테고리 선택
+        var categoryResult = MessageBox.Show(
+            "피드백 종류를 선택해주세요.\n\n[예] 버그 리포트\n[아니오] 기능 제안 / 일반 피드백",
+            "🧪 베타 테스터 피드백",
+            MessageBoxButton.YesNoCancel,
+            MessageBoxImage.Question);
+
+        if (categoryResult == MessageBoxResult.Cancel) return;
+
+        var category = categoryResult == MessageBoxResult.Yes ? "bug" : "general";
+        var categoryLabel = category == "bug" ? "버그 리포트" : "기능 제안 / 일반";
+
+        // 피드백 내용 입력
+        var content = Microsoft.VisualBasic.Interaction.InputBox(
+            $"[{categoryLabel}] 피드백 내용을 작성해주세요.\n\n(최소 20자 이상 작성해주세요)\n\n승인 시 정식 출시 후 평생 무료 혜택이 제공됩니다!",
+            "🧪 베타 테스터 피드백",
+            "");
+
+        if (string.IsNullOrWhiteSpace(content)) return;
+
+        if (content.Length < 20)
+        {
+            MessageBox.Show("피드백은 최소 20자 이상 작성해주세요.", "피드백 제출", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var result = await _authService.SubmitFeedbackAsync(content, category);
+
+        if (result.Success)
+        {
+            MessageBox.Show(
+                "피드백이 성공적으로 제출되었습니다! 🎉\n\n관리자 검토 후 평생 무료 혜택이 적용됩니다.",
+                "피드백 제출 완료",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            // 베타 상태 갱신
+            var betaStatus = await _authService.CheckBetaTesterStatusAsync();
+            Profile.SetUser(Profile.UserName, Profile.Email, _currentSubStatus, 0,
+                _authService.UserCreatedAt, betaStatus);
+        }
+        else
+        {
+            MessageBox.Show(
+                result.Error ?? "피드백 제출에 실패했습니다.",
+                "오류",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
         }
     }
 
