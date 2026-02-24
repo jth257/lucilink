@@ -931,7 +931,18 @@ public class MainViewModel : ViewModelBase
                 }
                 else
                 {
-                    Log($"Install complete (no package name found): {fileName}");
+                    // APK 파싱 실패 시 adb로 폴백
+                    Log("APK parse failed, trying adb fallback...");
+                    packageName = await GetPackageNameViaAdbAsync(apkPath);
+                    if (packageName != null)
+                    {
+                        Log($"Auto-launching (adb fallback): {packageName}");
+                        await LaunchAppAsync(packageName);
+                    }
+                    else
+                    {
+                        Log($"Install complete (no package name found): {fileName}");
+                    }
                 }
             }
             else
@@ -950,94 +961,167 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    /// <summary>APK 파일(ZIP)에서 AndroidManifest.xml의 바이너리 String Pool을 파싱하여 패키지명 추출</summary>
+    /// <summary>APK 파일에서 패키지명 추출 (raw byte scan + adb 폴백)</summary>
     private string? ExtractPackageNameFromApk(string apkPath)
     {
         try
         {
             using var zip = ZipFile.OpenRead(apkPath);
             var manifestEntry = zip.GetEntry("AndroidManifest.xml");
-            if (manifestEntry == null) return null;
+            if (manifestEntry == null)
+            {
+                Log("AndroidManifest.xml not found in APK.");
+                return null;
+            }
 
             using var stream = manifestEntry.Open();
             using var ms = new MemoryStream();
             stream.CopyTo(ms);
             var bytes = ms.ToArray();
+            Log($"AndroidManifest.xml size: {bytes.Length} bytes");
 
-            if (bytes.Length < 16) return null;
-
-            // Binary AXML: 파일 헤더(8바이트) 뒤에 String Pool 청크
-            int pos = 8;
-            if (pos + 28 > bytes.Length) return null;
-
-            ushort spType = BitConverter.ToUInt16(bytes, pos);
-            if (spType != 0x0001) return null; // STRING_POOL_TYPE
-
-            int stringCount = BitConverter.ToInt32(bytes, pos + 8);
-            int flags = BitConverter.ToInt32(bytes, pos + 16);
-            int stringsStart = BitConverter.ToInt32(bytes, pos + 20);
-            bool isUtf8 = (flags & (1 << 8)) != 0;
-
-            int offsetArrayStart = pos + 28;
-            int absoluteStringsStart = pos + stringsStart;
-
-            var strings = new List<string>();
-            for (int i = 0; i < stringCount && i < 200; i++)
+            // 방법1: null-terminated UTF-8 문자열 스캔
+            var found = ScanForPackageName(bytes);
+            if (found != null)
             {
-                if (offsetArrayStart + i * 4 + 4 > bytes.Length) break;
-                int offset = BitConverter.ToInt32(bytes, offsetArrayStart + i * 4);
-                int strPos = absoluteStringsStart + offset;
-
-                if (strPos >= bytes.Length) break;
-
-                string str;
-                if (isUtf8)
-                {
-                    // UTF-8: charLen(1~2바이트), byteLen(1~2바이트), UTF-8 문자열
-                    int charLen = bytes[strPos];
-                    if ((charLen & 0x80) != 0) strPos++;
-                    strPos++;
-
-                    int byteLen = bytes[strPos];
-                    if ((byteLen & 0x80) != 0)
-                    {
-                        byteLen = ((byteLen & 0x7F) << 8) | bytes[strPos + 1];
-                        strPos++;
-                    }
-                    strPos++;
-
-                    if (strPos + byteLen > bytes.Length) break;
-                    str = System.Text.Encoding.UTF8.GetString(bytes, strPos, byteLen);
-                }
-                else
-                {
-                    // UTF-16LE: charCount(2바이트), UTF-16LE 문자열
-                    if (strPos + 2 > bytes.Length) break;
-                    int charLen = BitConverter.ToUInt16(bytes, strPos);
-                    strPos += 2;
-                    if (strPos + charLen * 2 > bytes.Length) break;
-                    str = System.Text.Encoding.Unicode.GetString(bytes, strPos, charLen * 2);
-                }
-
-                strings.Add(str);
+                Log($"Package name from byte scan: {found}");
+                return found;
             }
 
-            // Java 패키지명 패턴 매칭 (예: com.example.myapp)
-            var packagePattern = new Regex(@"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*){2,}$");
-            var candidate = strings.FirstOrDefault(s =>
-                s.Length > 3 && s.Contains('.') && packagePattern.IsMatch(s) &&
-                !s.StartsWith("android.") && !s.StartsWith("http"));
+            // 방법2: UTF-16LE 문자열 스캔
+            found = ScanForPackageNameUtf16(bytes);
+            if (found != null)
+            {
+                Log($"Package name from UTF-16 scan: {found}");
+                return found;
+            }
 
-            if (candidate != null)
-                Log($"Extracted package from APK manifest: {candidate}");
-
-            return candidate;
+            Log("Could not extract package name from APK binary.");
+            return null;
         }
         catch (Exception ex)
         {
             Log($"APK parse failed: {ex.Message}");
             return null;
         }
+    }
+
+    /// <summary>바이트 배열에서 null-terminated UTF-8 문자열을 추출하여 패키지명 패턴 매칭</summary>
+    private static string? ScanForPackageName(byte[] bytes)
+    {
+        var packagePattern = new Regex(@"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){2,}$");
+        var candidates = new List<string>();
+
+        int start = -1;
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            byte b = bytes[i];
+            // printable ASCII (letters, digits, dot, underscore)
+            if ((b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') ||
+                (b >= '0' && b <= '9') || b == '.' || b == '_')
+            {
+                if (start < 0) start = i;
+            }
+            else
+            {
+                if (start >= 0 && i - start >= 5)
+                {
+                    var str = System.Text.Encoding.ASCII.GetString(bytes, start, i - start);
+                    if (str.Contains('.') && packagePattern.IsMatch(str.ToLower()) &&
+                        !str.StartsWith("android.", StringComparison.OrdinalIgnoreCase) &&
+                        !str.StartsWith("com.android.", StringComparison.OrdinalIgnoreCase) &&
+                        !str.StartsWith("http", StringComparison.OrdinalIgnoreCase) &&
+                        !str.StartsWith("schemas.", StringComparison.OrdinalIgnoreCase) &&
+                        !str.Contains("xmlns", StringComparison.OrdinalIgnoreCase) &&
+                        str.Length < 120)
+                    {
+                        candidates.Add(str);
+                    }
+                }
+                start = -1;
+            }
+        }
+
+        // 첫 번째 후보가 보통 manifest의 package 속성 값
+        return candidates.FirstOrDefault();
+    }
+
+    /// <summary>UTF-16LE 인코딩의 문자열에서 패키지명 스캔</summary>
+    private static string? ScanForPackageNameUtf16(byte[] bytes)
+    {
+        var packagePattern = new Regex(@"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){2,}$");
+
+        for (int i = 0; i < bytes.Length - 1; i += 2)
+        {
+            // UTF-16LE에서 ASCII 범위 문자열 시작점 찾기
+            if (bytes[i] >= 'a' && bytes[i] <= 'z' && bytes[i + 1] == 0)
+            {
+                var sb = new System.Text.StringBuilder();
+                for (int j = i; j < bytes.Length - 1; j += 2)
+                {
+                    if (bytes[j + 1] != 0) break; // non-ASCII
+                    char c = (char)bytes[j];
+                    if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '.' || c == '_')
+                        sb.Append(c);
+                    else break;
+
+                    if (sb.Length > 120) break;
+                }
+
+                var str = sb.ToString();
+                if (str.Length >= 5 && str.Contains('.') && packagePattern.IsMatch(str) &&
+                    !str.StartsWith("android.") && !str.StartsWith("com.android.") &&
+                    !str.StartsWith("http") && !str.StartsWith("schemas."))
+                {
+                    return str;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>adb를 사용하여 디바이스에서 패키지명 조회 (폴백용)</summary>
+    private async Task<string?> GetPackageNameViaAdbAsync(string apkPath)
+    {
+        try
+        {
+            if (_deviceSerial == null) return null;
+
+            // 설치된 모든 서드파티 패키지 목록 가져오기
+            var output = await Task.Run(async () =>
+            {
+                return await _adb.ExecuteCommandAsync(
+                    $"-s {_deviceSerial} shell pm list packages -3").ConfigureAwait(false);
+            });
+
+            var packages = output.Split('\n')
+                .Where(l => l.StartsWith("package:"))
+                .Select(l => l.Replace("package:", "").Trim())
+                .Where(p => !string.IsNullOrEmpty(p))
+                .ToArray();
+
+            // 파일명 힌트로 매칭
+            var fileName = Path.GetFileNameWithoutExtension(apkPath)
+                .Replace("-release", "").Replace("-debug", "")
+                .Replace("_release", "").Replace("_debug", "");
+
+            // 정확히 같은 이름 먼저
+            var exact = packages.FirstOrDefault(p =>
+                p.Equals(fileName, StringComparison.OrdinalIgnoreCase));
+            if (exact != null) return exact;
+
+            // 패키지명 끝부분 매칭 (예: com.example.myapp → "myapp" 매칭)
+            var endMatch = packages.FirstOrDefault(p =>
+                p.EndsWith("." + fileName, StringComparison.OrdinalIgnoreCase));
+            if (endMatch != null) return endMatch;
+
+            // 부분 매칭 (마지막 수단)
+            var partial = packages.FirstOrDefault(p =>
+                p.Contains(fileName, StringComparison.OrdinalIgnoreCase));
+            return partial;
+        }
+        catch { return null; }
     }
 
     private async Task LaunchAppAsync(string packageName)
