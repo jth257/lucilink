@@ -1,6 +1,8 @@
 using System.Buffers.Binary;
 using System.Diagnostics;
 using System.IO;
+using System.IO.Compression;
+using System.Text.RegularExpressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Windows;
@@ -903,6 +905,13 @@ public class MainViewModel : ViewModelBase
 
         try
         {
+            // APK에서 패키지명 미리 추출
+            var packageName = ExtractPackageNameFromApk(apkPath);
+            if (packageName != null)
+                Log($"Package name from APK: {packageName}");
+            else
+                Log("Could not extract package name from APK.");
+
             var result = await Task.Run(async () =>
             {
                 return await _adb.ExecuteCommandAsync(
@@ -914,8 +923,6 @@ public class MainViewModel : ViewModelBase
             if (result.Contains("Success"))
             {
                 Log($"Installed: {fileName}");
-
-                var packageName = await TryGetPackageNameAsync(apkPath);
 
                 if (packageName != null)
                 {
@@ -943,37 +950,94 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    /// <summary>APK 설치 후 패키지명 조회 — adb shell pm list packages를 이용 (aapt 불필요)</summary>
-    private async Task<string?> TryGetPackageNameAsync(string apkPath)
+    /// <summary>APK 파일(ZIP)에서 AndroidManifest.xml의 바이너리 String Pool을 파싱하여 패키지명 추출</summary>
+    private string? ExtractPackageNameFromApk(string apkPath)
     {
         try
         {
-            if (_deviceSerial == null) return null;
+            using var zip = ZipFile.OpenRead(apkPath);
+            var manifestEntry = zip.GetEntry("AndroidManifest.xml");
+            if (manifestEntry == null) return null;
 
-            // APK 파일명에서 패키지명 힌트 추출 (예: com.example.app-release.apk → com.example.app)
-            var fileName = Path.GetFileNameWithoutExtension(apkPath)
-                .Replace("-release", "").Replace("-debug", "").Replace("_release", "").Replace("_debug", "");
+            using var stream = manifestEntry.Open();
+            using var ms = new MemoryStream();
+            stream.CopyTo(ms);
+            var bytes = ms.ToArray();
 
-            // 설치된 패키지 목록에서 파일명과 매칭되는 패키지 검색
-            var output = await Task.Run(async () =>
+            if (bytes.Length < 16) return null;
+
+            // Binary AXML: 파일 헤더(8바이트) 뒤에 String Pool 청크
+            int pos = 8;
+            if (pos + 28 > bytes.Length) return null;
+
+            ushort spType = BitConverter.ToUInt16(bytes, pos);
+            if (spType != 0x0001) return null; // STRING_POOL_TYPE
+
+            int stringCount = BitConverter.ToInt32(bytes, pos + 8);
+            int flags = BitConverter.ToInt32(bytes, pos + 16);
+            int stringsStart = BitConverter.ToInt32(bytes, pos + 20);
+            bool isUtf8 = (flags & (1 << 8)) != 0;
+
+            int offsetArrayStart = pos + 28;
+            int absoluteStringsStart = pos + stringsStart;
+
+            var strings = new List<string>();
+            for (int i = 0; i < stringCount && i < 200; i++)
             {
-                return await _adb.ExecuteCommandAsync(
-                    $"-s {_deviceSerial} shell pm list packages -3").ConfigureAwait(false);
-            });
+                if (offsetArrayStart + i * 4 + 4 > bytes.Length) break;
+                int offset = BitConverter.ToInt32(bytes, offsetArrayStart + i * 4);
+                int strPos = absoluteStringsStart + offset;
 
-            // 가장 최근 설치된 패키지 중 파일명과 유사한 것 찾기
-            var packages = output.Split('\n')
-                .Where(l => l.StartsWith("package:"))
-                .Select(l => l.Replace("package:", "").Trim())
-                .ToArray();
+                if (strPos >= bytes.Length) break;
 
-            // 정확한 패키지명 매칭 시도
-            var match = packages.FirstOrDefault(p =>
-                p.Contains(fileName, StringComparison.OrdinalIgnoreCase));
+                string str;
+                if (isUtf8)
+                {
+                    // UTF-8: charLen(1~2바이트), byteLen(1~2바이트), UTF-8 문자열
+                    int charLen = bytes[strPos];
+                    if ((charLen & 0x80) != 0) strPos++;
+                    strPos++;
 
-            return match;
+                    int byteLen = bytes[strPos];
+                    if ((byteLen & 0x80) != 0)
+                    {
+                        byteLen = ((byteLen & 0x7F) << 8) | bytes[strPos + 1];
+                        strPos++;
+                    }
+                    strPos++;
+
+                    if (strPos + byteLen > bytes.Length) break;
+                    str = System.Text.Encoding.UTF8.GetString(bytes, strPos, byteLen);
+                }
+                else
+                {
+                    // UTF-16LE: charCount(2바이트), UTF-16LE 문자열
+                    if (strPos + 2 > bytes.Length) break;
+                    int charLen = BitConverter.ToUInt16(bytes, strPos);
+                    strPos += 2;
+                    if (strPos + charLen * 2 > bytes.Length) break;
+                    str = System.Text.Encoding.Unicode.GetString(bytes, strPos, charLen * 2);
+                }
+
+                strings.Add(str);
+            }
+
+            // Java 패키지명 패턴 매칭 (예: com.example.myapp)
+            var packagePattern = new Regex(@"^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*){2,}$");
+            var candidate = strings.FirstOrDefault(s =>
+                s.Length > 3 && s.Contains('.') && packagePattern.IsMatch(s) &&
+                !s.StartsWith("android.") && !s.StartsWith("http"));
+
+            if (candidate != null)
+                Log($"Extracted package from APK manifest: {candidate}");
+
+            return candidate;
         }
-        catch { return null; }
+        catch (Exception ex)
+        {
+            Log($"APK parse failed: {ex.Message}");
+            return null;
+        }
     }
 
     private async Task LaunchAppAsync(string packageName)
