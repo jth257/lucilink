@@ -919,20 +919,12 @@ public class MainViewModel : ViewModelBase
 
                 if (packageName != null)
                 {
-                    var launch = MessageBox.Show(
-                        string.Format(LocalizationManager.Get("Msg.InstallLaunchPrompt"), fileName),
-                        LocalizationManager.Get("Msg.InstallSuccess"), MessageBoxButton.YesNo, MessageBoxImage.Question);
-
-                    if (launch == MessageBoxResult.Yes)
-                    {
-                        await LaunchAppAsync(packageName);
-                    }
+                    Log($"Auto-launching: {packageName}");
+                    await LaunchAppAsync(packageName);
                 }
                 else
                 {
-                    MessageBox.Show(
-                        string.Format(LocalizationManager.Get("Msg.InstallComplete"), fileName),
-                        LocalizationManager.Get("Msg.InstallSuccess"));
+                    Log($"Install complete (no package name found): {fileName}");
                 }
             }
             else

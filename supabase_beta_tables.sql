@@ -21,7 +21,7 @@ CREATE POLICY "Users can view own login"
 CREATE TABLE IF NOT EXISTS beta_feedbacks (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES auth.users(id) NOT NULL,
-  content TEXT NOT NULL CHECK (char_length(content) >= 20),
+  content TEXT NOT NULL CHECK (char_length(content) >= 10),
   category TEXT DEFAULT 'general',
   status TEXT DEFAULT 'pending',
   reviewed_at TIMESTAMPTZ,
