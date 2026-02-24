@@ -905,12 +905,9 @@ public class MainViewModel : ViewModelBase
 
         try
         {
-            // APK에서 패키지명 미리 추출
-            var packageName = ExtractPackageNameFromApk(apkPath);
-            if (packageName != null)
-                Log($"Package name from APK: {packageName}");
-            else
-                Log("Could not extract package name from APK.");
+            // 설치 전 패키지 목록 스냅샷
+            var packagesBefore = await GetInstalledPackagesAsync();
+            Log($"Packages before install: {packagesBefore.Count}");
 
             var result = await Task.Run(async () =>
             {
@@ -924,25 +921,17 @@ public class MainViewModel : ViewModelBase
             {
                 Log($"Installed: {fileName}");
 
+                // 패키지명 감지
+                var packageName = await DetectInstalledPackageAsync(packagesBefore);
+
                 if (packageName != null)
                 {
-                    Log($"Auto-launching: {packageName}");
+                    Log($"Detected package: {packageName}");
                     await LaunchAppAsync(packageName);
                 }
                 else
                 {
-                    // APK 파싱 실패 시 adb로 폴백
-                    Log("APK parse failed, trying adb fallback...");
-                    packageName = await GetPackageNameViaAdbAsync(apkPath);
-                    if (packageName != null)
-                    {
-                        Log($"Auto-launching (adb fallback): {packageName}");
-                        await LaunchAppAsync(packageName);
-                    }
-                    else
-                    {
-                        Log($"Install complete (no package name found): {fileName}");
-                    }
+                    Log($"Install complete (could not detect package name): {fileName}");
                 }
             }
             else
@@ -961,167 +950,132 @@ public class MainViewModel : ViewModelBase
         }
     }
 
-    /// <summary>APK 파일에서 패키지명 추출 (raw byte scan + adb 폴백)</summary>
-    private string? ExtractPackageNameFromApk(string apkPath)
+    /// <summary>설치된 서드파티 패키지 목록 조회</summary>
+    private async Task<HashSet<string>> GetInstalledPackagesAsync()
     {
         try
         {
-            using var zip = ZipFile.OpenRead(apkPath);
-            var manifestEntry = zip.GetEntry("AndroidManifest.xml");
-            if (manifestEntry == null)
-            {
-                Log("AndroidManifest.xml not found in APK.");
-                return null;
-            }
+            if (_deviceSerial == null) return new HashSet<string>();
 
-            using var stream = manifestEntry.Open();
-            using var ms = new MemoryStream();
-            stream.CopyTo(ms);
-            var bytes = ms.ToArray();
-            Log($"AndroidManifest.xml size: {bytes.Length} bytes");
-
-            // 방법1: null-terminated UTF-8 문자열 스캔
-            var found = ScanForPackageName(bytes);
-            if (found != null)
-            {
-                Log($"Package name from byte scan: {found}");
-                return found;
-            }
-
-            // 방법2: UTF-16LE 문자열 스캔
-            found = ScanForPackageNameUtf16(bytes);
-            if (found != null)
-            {
-                Log($"Package name from UTF-16 scan: {found}");
-                return found;
-            }
-
-            Log("Could not extract package name from APK binary.");
-            return null;
-        }
-        catch (Exception ex)
-        {
-            Log($"APK parse failed: {ex.Message}");
-            return null;
-        }
-    }
-
-    /// <summary>바이트 배열에서 null-terminated UTF-8 문자열을 추출하여 패키지명 패턴 매칭</summary>
-    private static string? ScanForPackageName(byte[] bytes)
-    {
-        var packagePattern = new Regex(@"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){2,}$");
-        var candidates = new List<string>();
-
-        int start = -1;
-        for (int i = 0; i < bytes.Length; i++)
-        {
-            byte b = bytes[i];
-            // printable ASCII (letters, digits, dot, underscore)
-            if ((b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') ||
-                (b >= '0' && b <= '9') || b == '.' || b == '_')
-            {
-                if (start < 0) start = i;
-            }
-            else
-            {
-                if (start >= 0 && i - start >= 5)
-                {
-                    var str = System.Text.Encoding.ASCII.GetString(bytes, start, i - start);
-                    if (str.Contains('.') && packagePattern.IsMatch(str.ToLower()) &&
-                        !str.StartsWith("android.", StringComparison.OrdinalIgnoreCase) &&
-                        !str.StartsWith("com.android.", StringComparison.OrdinalIgnoreCase) &&
-                        !str.StartsWith("http", StringComparison.OrdinalIgnoreCase) &&
-                        !str.StartsWith("schemas.", StringComparison.OrdinalIgnoreCase) &&
-                        !str.Contains("xmlns", StringComparison.OrdinalIgnoreCase) &&
-                        str.Length < 120)
-                    {
-                        candidates.Add(str);
-                    }
-                }
-                start = -1;
-            }
-        }
-
-        // 첫 번째 후보가 보통 manifest의 package 속성 값
-        return candidates.FirstOrDefault();
-    }
-
-    /// <summary>UTF-16LE 인코딩의 문자열에서 패키지명 스캔</summary>
-    private static string? ScanForPackageNameUtf16(byte[] bytes)
-    {
-        var packagePattern = new Regex(@"^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*){2,}$");
-
-        for (int i = 0; i < bytes.Length - 1; i += 2)
-        {
-            // UTF-16LE에서 ASCII 범위 문자열 시작점 찾기
-            if (bytes[i] >= 'a' && bytes[i] <= 'z' && bytes[i + 1] == 0)
-            {
-                var sb = new System.Text.StringBuilder();
-                for (int j = i; j < bytes.Length - 1; j += 2)
-                {
-                    if (bytes[j + 1] != 0) break; // non-ASCII
-                    char c = (char)bytes[j];
-                    if ((c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '.' || c == '_')
-                        sb.Append(c);
-                    else break;
-
-                    if (sb.Length > 120) break;
-                }
-
-                var str = sb.ToString();
-                if (str.Length >= 5 && str.Contains('.') && packagePattern.IsMatch(str) &&
-                    !str.StartsWith("android.") && !str.StartsWith("com.android.") &&
-                    !str.StartsWith("http") && !str.StartsWith("schemas."))
-                {
-                    return str;
-                }
-            }
-        }
-
-        return null;
-    }
-
-    /// <summary>adb를 사용하여 디바이스에서 패키지명 조회 (폴백용)</summary>
-    private async Task<string?> GetPackageNameViaAdbAsync(string apkPath)
-    {
-        try
-        {
-            if (_deviceSerial == null) return null;
-
-            // 설치된 모든 서드파티 패키지 목록 가져오기
             var output = await Task.Run(async () =>
             {
                 return await _adb.ExecuteCommandAsync(
                     $"-s {_deviceSerial} shell pm list packages -3").ConfigureAwait(false);
             });
 
-            var packages = output.Split('\n')
+            return output.Split('\n')
                 .Where(l => l.StartsWith("package:"))
                 .Select(l => l.Replace("package:", "").Trim())
                 .Where(p => !string.IsNullOrEmpty(p))
-                .ToArray();
-
-            // 파일명 힌트로 매칭
-            var fileName = Path.GetFileNameWithoutExtension(apkPath)
-                .Replace("-release", "").Replace("-debug", "")
-                .Replace("_release", "").Replace("_debug", "");
-
-            // 정확히 같은 이름 먼저
-            var exact = packages.FirstOrDefault(p =>
-                p.Equals(fileName, StringComparison.OrdinalIgnoreCase));
-            if (exact != null) return exact;
-
-            // 패키지명 끝부분 매칭 (예: com.example.myapp → "myapp" 매칭)
-            var endMatch = packages.FirstOrDefault(p =>
-                p.EndsWith("." + fileName, StringComparison.OrdinalIgnoreCase));
-            if (endMatch != null) return endMatch;
-
-            // 부분 매칭 (마지막 수단)
-            var partial = packages.FirstOrDefault(p =>
-                p.Contains(fileName, StringComparison.OrdinalIgnoreCase));
-            return partial;
+                .ToHashSet();
         }
-        catch { return null; }
+        catch { return new HashSet<string>(); }
+    }
+
+    /// <summary>설치 전후 패키지 비교 + lastUpdateTime으로 설치된 패키지 감지</summary>
+    private async Task<string?> DetectInstalledPackageAsync(HashSet<string> packagesBefore)
+    {
+        try
+        {
+            if (_deviceSerial == null) return null;
+
+            // 1단계: 신규 설치 — 설치 전후 비교
+            var packagesAfter = await GetInstalledPackagesAsync();
+            var newPackages = packagesAfter.Except(packagesBefore).ToArray();
+            Log($"Packages after install: {packagesAfter.Count}, new: {newPackages.Length}");
+
+            if (newPackages.Length == 1)
+            {
+                Log($"New package detected: {newPackages[0]}");
+                return newPackages[0];
+            }
+            if (newPackages.Length > 1)
+            {
+                Log($"Multiple new packages: {string.Join(", ", newPackages)}");
+                return newPackages[0];
+            }
+
+            // 2단계: 재설치(업데이트) — lastUpdateTime이 가장 최근인 패키지 찾기
+            Log("No new package (likely reinstall). Checking lastUpdateTime...");
+            var recentPackage = await FindMostRecentlyUpdatedPackageAsync(packagesAfter);
+            if (recentPackage != null)
+            {
+                Log($"Most recently updated package: {recentPackage}");
+                return recentPackage;
+            }
+
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Log($"Package detection failed: {ex.Message}");
+            return null;
+        }
+    }
+
+    /// <summary>서드파티 패키지 중 lastUpdateTime이 가장 최근인 패키지 반환</summary>
+    private async Task<string?> FindMostRecentlyUpdatedPackageAsync(HashSet<string> packages)
+    {
+        try
+        {
+            if (_deviceSerial == null) return null;
+
+            var output = await Task.Run(async () =>
+            {
+                return await _adb.ExecuteCommandAsync(
+                    $"-s {_deviceSerial} shell dumpsys package packages").ConfigureAwait(false);
+            });
+
+            // "Package [<name>]" 와 "lastUpdateTime=<timestamp>" 파싱
+            string? currentPackage = null;
+            string? bestPackage = null;
+            long bestTime = 0;
+
+            foreach (var rawLine in output.Split('\n'))
+            {
+                var line = rawLine.Trim();
+
+                if (line.StartsWith("Package ["))
+                {
+                    var start = line.IndexOf('[') + 1;
+                    var end = line.IndexOf(']', start);
+                    if (end > start)
+                        currentPackage = line.Substring(start, end - start);
+                }
+                else if (line.StartsWith("lastUpdateTime=") && currentPackage != null)
+                {
+                    // 서드파티 패키지만 대상
+                    if (!packages.Contains(currentPackage)) continue;
+
+                    var timeStr = line.Substring("lastUpdateTime=".Length).Trim();
+                    // 형식: "2026-02-25 00:10:00" 또는 유닉스 타임스탬프
+                    if (DateTime.TryParse(timeStr, out var dt))
+                    {
+                        long ticks = dt.Ticks;
+                        if (ticks > bestTime)
+                        {
+                            bestTime = ticks;
+                            bestPackage = currentPackage;
+                        }
+                    }
+                    else if (long.TryParse(timeStr, out var unixMs))
+                    {
+                        if (unixMs > bestTime)
+                        {
+                            bestTime = unixMs;
+                            bestPackage = currentPackage;
+                        }
+                    }
+                }
+            }
+
+            return bestPackage;
+        }
+        catch (Exception ex)
+        {
+            Log($"lastUpdateTime query failed: {ex.Message}");
+            return null;
+        }
     }
 
     private async Task LaunchAppAsync(string packageName)
