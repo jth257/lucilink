@@ -65,7 +65,37 @@ public partial class MainWindow : Window
         Closed += (s, e) =>
         {
             SaveWindowPosition();
+            _vm.CleanupGuestMode();
             _vm.OnClosed();
+        };
+
+        // 게스트 모드 이벤트 구독
+        _vm.GuestModeEntered += () =>
+        {
+            LoginPanel.Visibility = Visibility.Collapsed;
+            MainPanel.Visibility = Visibility.Visible;
+        };
+        _vm.GuestModeEnded += () =>
+        {
+            MainPanel.Visibility = Visibility.Collapsed;
+            LoginPanel.Visibility = Visibility.Visible;
+        };
+
+        // 게스트 모드 중 종료 경고
+        Closing += (s, e) =>
+        {
+            if (_vm.IsGuestMode)
+            {
+                var result = MessageBox.Show(
+                    LocalizationManager.Get("Guest.CloseWarning"),
+                    LocalizationManager.Get("Guest.CloseWarningTitle"),
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Warning);
+                if (result == MessageBoxResult.No)
+                {
+                    e.Cancel = true;
+                }
+            }
         };
     }
 
@@ -168,6 +198,12 @@ public partial class MainWindow : Window
         LoginPanel.Visibility = Visibility.Visible;
         LoginIdBox.Text = "";
         LoginPwBox.Password = "";
+    }
+
+    // ===== 게스트 모드 =====
+    private async void OnGuestMode(object sender, RoutedEventArgs e)
+    {
+        await _vm.EnterGuestModeAsync();
     }
 
     // ===== APK 드래그 앤 드롭 (DragEventArgs는 View에서만 접근) =====

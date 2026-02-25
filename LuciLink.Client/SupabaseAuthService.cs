@@ -370,6 +370,60 @@ public class SupabaseAuthService
             return null;
         }
     }
+
+    /// <summary>게스트 모드 사용 여부 확인 (비로그인 — anon 키만 사용)</summary>
+    public async Task<bool> CheckGuestUsageAsync(string deviceHash)
+    {
+        var body = JsonSerializer.Serialize(new { p_device_hash = deviceHash });
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"{SupabaseConfig.Url}/rest/v1/rpc/check_guest_usage")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        request.Headers.Add("apikey", SupabaseConfig.AnonKey);
+
+        try
+        {
+            var response = await Http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            System.Diagnostics.Debug.WriteLine($"[GUEST] CheckUsage: {json}");
+
+            if (!response.IsSuccessStatusCode) return false;
+
+            var result = JsonSerializer.Deserialize<GuestUsageResponse>(json);
+            return result?.Used ?? false;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[GUEST] CheckUsage failed: {ex.Message}");
+            throw; // 네트워크 오류는 호출자에서 처리
+        }
+    }
+
+    /// <summary>게스트 모드 사용 기록 (비로그인 — anon 키만 사용)</summary>
+    public async Task<bool> RecordGuestUsageAsync(string deviceHash)
+    {
+        var body = JsonSerializer.Serialize(new { p_device_hash = deviceHash });
+        var request = new HttpRequestMessage(HttpMethod.Post,
+            $"{SupabaseConfig.Url}/rest/v1/rpc/record_guest_usage")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        request.Headers.Add("apikey", SupabaseConfig.AnonKey);
+
+        try
+        {
+            var response = await Http.SendAsync(request);
+            var json = await response.Content.ReadAsStringAsync();
+            System.Diagnostics.Debug.WriteLine($"[GUEST] RecordUsage: {json}");
+            return response.IsSuccessStatusCode;
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine($"[GUEST] RecordUsage failed: {ex.Message}");
+            return false;
+        }
+    }
 }
 
 #region DTOs
@@ -489,6 +543,15 @@ public class BetaTesterStatus
 
     [JsonPropertyName("latest_feedback_status")]
     public string? LatestFeedbackStatus { get; set; }
+}
+
+public class GuestUsageResponse
+{
+    [JsonPropertyName("used")]
+    public bool Used { get; set; }
+
+    [JsonPropertyName("used_at")]
+    public string? UsedAt { get; set; }
 }
 
 #endregion

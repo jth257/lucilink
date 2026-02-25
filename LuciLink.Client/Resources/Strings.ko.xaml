@@ -146,4 +146,14 @@
     <!-- ===== 언어 설정 ===== -->
     <sys:String x:Key="Lang.Current">한국어</sys:String>
     <sys:String x:Key="Lang.Switch">English</sys:String>
+
+    <!-- ===== 게스트 모드 ===== -->
+    <sys:String x:Key="Guest.Button">🚀 로그인 없이 체험하기</sys:String>
+    <sys:String x:Key="Guest.AlreadyUsed">이미 게스트 체험을 사용하셨습니다.&#x0a;로그인하시면 제한 없이 이용할 수 있습니다.</sys:String>
+    <sys:String x:Key="Guest.AlreadyUsedTitle">게스트 체험 불가</sys:String>
+    <sys:String x:Key="Guest.Ended">체험이 끝났습니다!&#x0a;로그인하고 제한없이 이용하세요!</sys:String>
+    <sys:String x:Key="Guest.EndedTitle">게스트 체험 종료</sys:String>
+    <sys:String x:Key="Guest.CloseWarning">게스트 모드를 종료하면 다시 사용할 수 없습니다.&#x0a;&#x0a;계속 종료하시겠습니까?</sys:String>
+    <sys:String x:Key="Guest.CloseWarningTitle">게스트 모드 종료</sys:String>
+    <sys:String x:Key="Guest.CheckFailed">서버 연결에 실패했습니다.&#x0a;인터넷 연결을 확인해주세요.</sys:String>
 </ResourceDictionary>

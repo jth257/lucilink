@@ -146,4 +146,14 @@
     <!-- ===== Language ===== -->
     <sys:String x:Key="Lang.Current">English</sys:String>
     <sys:String x:Key="Lang.Switch">한국어</sys:String>
+
+    <!-- ===== Guest Mode ===== -->
+    <sys:String x:Key="Guest.Button">🚀 Try without signing in</sys:String>
+    <sys:String x:Key="Guest.AlreadyUsed">You have already used the guest trial.&#x0a;Sign in for unlimited access.</sys:String>
+    <sys:String x:Key="Guest.AlreadyUsedTitle">Guest Trial Unavailable</sys:String>
+    <sys:String x:Key="Guest.Ended">Your trial has ended!&#x0a;Sign in for unlimited access!</sys:String>
+    <sys:String x:Key="Guest.EndedTitle">Guest Trial Ended</sys:String>
+    <sys:String x:Key="Guest.CloseWarning">If you close guest mode, you won't be able to use it again.&#x0a;&#x0a;Are you sure you want to close?</sys:String>
+    <sys:String x:Key="Guest.CloseWarningTitle">Close Guest Mode</sys:String>
+    <sys:String x:Key="Guest.CheckFailed">Failed to connect to server.&#x0a;Please check your internet connection.</sys:String>
 </ResourceDictionary>

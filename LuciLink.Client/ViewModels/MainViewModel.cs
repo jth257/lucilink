@@ -41,6 +41,12 @@ public class MainViewModel : ViewModelBase
     private System.Threading.Timer? _subscriptionCheckTimer;
     private string _currentSubStatus = "pending";
 
+    // 게스트 모드
+    private System.Threading.Timer? _guestTimer;
+    private int _guestSecondsRemaining;
+    private bool _isGuestMode;
+    private string _guestTimerText = "";
+
     // 연결 상태
     private Process? _serverProcess;
     private string? _deviceSerial;
@@ -172,6 +178,18 @@ public class MainViewModel : ViewModelBase
         set => SetProperty(ref _windowTitle, value);
     }
 
+    public bool IsGuestMode
+    {
+        get => _isGuestMode;
+        set => SetProperty(ref _isGuestMode, value);
+    }
+
+    public string GuestTimerText
+    {
+        get => _guestTimerText;
+        set => SetProperty(ref _guestTimerText, value);
+    }
+
     #endregion
 
     #region Commands
@@ -194,6 +212,8 @@ public class MainViewModel : ViewModelBase
 
     // 화면 회전 시 윈도우 크기 조정 요청 이벤트
     public event Action<int, int>? RotationDetected;
+    public event Action? GuestModeEntered;
+    public event Action? GuestModeEnded;
 
     public MainViewModel(Dispatcher dispatcher)
     {
@@ -350,7 +370,7 @@ public class MainViewModel : ViewModelBase
 
     /// <summary>구독 상태 확인 — 기능 사용 가능 여부</summary>
     private bool CanUseApp =>
-        _currentSubStatus == "trial" || _currentSubStatus == "active" || _currentSubStatus == "subscribed" || _currentSubStatus == "cancelled";
+        _currentSubStatus == "trial" || _currentSubStatus == "active" || _currentSubStatus == "subscribed" || _currentSubStatus == "cancelled" || _currentSubStatus == "guest";
 
     private async Task ConnectAsync()
     {
@@ -488,6 +508,128 @@ public class MainViewModel : ViewModelBase
         UpdateStatus(false, null);
         Log("Disconnected.");
     }
+
+    #region Guest Mode
+
+    /// <summary>게스트 모드 진입</summary>
+    public async Task EnterGuestModeAsync()
+    {
+        try
+        {
+            Log("Guest mode: checking device fingerprint...");
+            var deviceHash = DeviceFingerprint.Generate();
+
+            // 서버에서 이미 사용 여부 확인
+            bool alreadyUsed;
+            try
+            {
+                alreadyUsed = await _authService.CheckGuestUsageAsync(deviceHash);
+            }
+            catch
+            {
+                MessageBox.Show(
+                    LocalizationManager.Get("Guest.CheckFailed"),
+                    LocalizationManager.Get("Msg.Error"),
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (alreadyUsed)
+            {
+                Log("Guest mode: already used on this device.");
+                MessageBox.Show(
+                    LocalizationManager.Get("Guest.AlreadyUsed"),
+                    LocalizationManager.Get("Guest.AlreadyUsedTitle"),
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            // 서버에 사용 기록
+            var recorded = await _authService.RecordGuestUsageAsync(deviceHash);
+            if (!recorded)
+            {
+                Log("Guest mode: failed to record usage.");
+                MessageBox.Show(
+                    LocalizationManager.Get("Guest.CheckFailed"),
+                    LocalizationManager.Get("Msg.Error"),
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            // 게스트 모드 활성화
+            _currentSubStatus = "guest";
+            IsGuestMode = true;
+            _guestSecondsRemaining = 600; // 10분
+            UpdateGuestTimerText();
+
+            Log($"Guest mode activated. {_guestSecondsRemaining}s remaining.");
+
+            // 타이머 시작 (1초 간격)
+            _guestTimer = new System.Threading.Timer(OnGuestTimerTick, null,
+                TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
+
+            GuestModeEntered?.Invoke();
+        }
+        catch (Exception ex)
+        {
+            Log($"Guest mode error: {ex.Message}");
+        }
+    }
+
+    private void OnGuestTimerTick(object? state)
+    {
+        _guestSecondsRemaining--;
+
+        _dispatcher.Invoke(() =>
+        {
+            UpdateGuestTimerText();
+
+            if (_guestSecondsRemaining <= 0)
+            {
+                EndGuestMode();
+            }
+        });
+    }
+
+    private void UpdateGuestTimerText()
+    {
+        var min = _guestSecondsRemaining / 60;
+        var sec = _guestSecondsRemaining % 60;
+        GuestTimerText = $"{min:D2}:{sec:D2}";
+    }
+
+    /// <summary>게스트 모드 종료 (타이머 만료 또는 수동)</summary>
+    public void EndGuestMode()
+    {
+        if (!IsGuestMode) return;
+
+        _guestTimer?.Dispose();
+        _guestTimer = null;
+
+        if (_isRunning) Disconnect();
+
+        IsGuestMode = false;
+        _currentSubStatus = "pending";
+        GuestTimerText = "";
+
+        Log("Guest mode ended.");
+
+        MessageBox.Show(
+            LocalizationManager.Get("Guest.Ended"),
+            LocalizationManager.Get("Guest.EndedTitle"),
+            MessageBoxButton.OK, MessageBoxImage.Information);
+
+        GuestModeEnded?.Invoke();
+    }
+
+    /// <summary>게스트 모드 정리 (앱 종료 시 타이머만 해제)</summary>
+    public void CleanupGuestMode()
+    {
+        _guestTimer?.Dispose();
+        _guestTimer = null;
+    }
+
+    #endregion
 
     private async void OnLogout()
     {
