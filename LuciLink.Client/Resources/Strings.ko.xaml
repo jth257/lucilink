@@ -156,4 +156,14 @@
     <sys:String x:Key="Guest.CloseWarning">게스트 모드를 종료하면 다시 사용할 수 없습니다.&#x0a;&#x0a;계속 종료하시겠습니까?</sys:String>
     <sys:String x:Key="Guest.CloseWarningTitle">게스트 모드 종료</sys:String>
     <sys:String x:Key="Guest.CheckFailed">서버 연결에 실패했습니다.&#x0a;인터넷 연결을 확인해주세요.</sys:String>
+
+    <!-- ===== 목업 창 ===== -->
+    <sys:String x:Key="Mockup.Title">📱 스토어 목업</sys:String>
+    <sys:String x:Key="Mockup.BackgroundStyle">배경 스타일</sys:String>
+    <sys:String x:Key="Mockup.MarketingText">마케팅 문구</sys:String>
+    <sys:String x:Key="Mockup.MarketingHint">스크린샷 상단에 표시됩니다</sys:String>
+    <sys:String x:Key="Mockup.SaveButton">💾 고화질 PNG 저장</sys:String>
+    <sys:String x:Key="Mockup.SpecTitle">📋 출력 규격</sys:String>
+    <sys:String x:Key="Mockup.SpecDPI">DPI 독립적 고해상도 렌더링</sys:String>
+    <sys:String x:Key="Mockup.SpecSavePath">바탕화면에 PNG로 저장됩니다</sys:String>
 </ResourceDictionary>

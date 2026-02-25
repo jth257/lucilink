@@ -156,4 +156,14 @@
     <sys:String x:Key="Guest.CloseWarning">If you close guest mode, you won't be able to use it again.&#x0a;&#x0a;Are you sure you want to close?</sys:String>
     <sys:String x:Key="Guest.CloseWarningTitle">Close Guest Mode</sys:String>
     <sys:String x:Key="Guest.CheckFailed">Failed to connect to server.&#x0a;Please check your internet connection.</sys:String>
+
+    <!-- ===== Mockup Window ===== -->
+    <sys:String x:Key="Mockup.Title">📱 Store Mockup</sys:String>
+    <sys:String x:Key="Mockup.BackgroundStyle">Background Style</sys:String>
+    <sys:String x:Key="Mockup.MarketingText">Marketing Text</sys:String>
+    <sys:String x:Key="Mockup.MarketingHint">Displayed at the top of the screenshot</sys:String>
+    <sys:String x:Key="Mockup.SaveButton">💾 Save High-Quality PNG</sys:String>
+    <sys:String x:Key="Mockup.SpecTitle">📋 Output Specs</sys:String>
+    <sys:String x:Key="Mockup.SpecDPI">DPI-independent high-resolution rendering</sys:String>
+    <sys:String x:Key="Mockup.SpecSavePath">Saved as PNG on the desktop</sys:String>
 </ResourceDictionary>

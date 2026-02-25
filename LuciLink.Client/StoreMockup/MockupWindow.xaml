@@ -106,7 +106,7 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="20">
                     <!-- 타이틀 -->
-                    <TextBlock Text="📱 스토어 목업" FontSize="18" FontWeight="Bold"
+                    <TextBlock Text="{DynamicResource Mockup.Title}" FontSize="18" FontWeight="Bold"
                                Foreground="#1D1D1F" Margin="0,0,0,4"
                                FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
                     <TextBlock Text="Google Play 1080 × 1920" FontSize="11"
@@ -114,7 +114,7 @@
                                FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
 
                     <!-- 배경 스타일 -->
-                    <TextBlock Text="배경 스타일" FontSize="13" FontWeight="SemiBold"
+                    <TextBlock Text="{DynamicResource Mockup.BackgroundStyle}" FontSize="13" FontWeight="SemiBold"
                                Foreground="#1D1D1F" Margin="0,0,0,10"
                                FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
 
@@ -187,10 +187,10 @@
                     </RadioButton>
 
                     <!-- 마케팅 문구 -->
-                    <TextBlock Text="마케팅 문구" FontSize="13" FontWeight="SemiBold"
+                    <TextBlock Text="{DynamicResource Mockup.MarketingText}" FontSize="13" FontWeight="SemiBold"
                                Foreground="#1D1D1F" Margin="0,24,0,6"
                                FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
-                    <TextBlock Text="스크린샷 상단에 표시됩니다" FontSize="11"
+                    <TextBlock Text="{DynamicResource Mockup.MarketingHint}" FontSize="11"
                                Foreground="#86868B" Margin="0,0,0,8"
                                FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
                     <TextBox Text="{Binding MarketingText, UpdateSourceTrigger=PropertyChanged}"
@@ -199,7 +199,7 @@
                              VerticalContentAlignment="Top"/>
 
                     <!-- 저장 버튼 -->
-                    <Button Content="💾 고화질 PNG 저장" Click="OnSaveClick"
+                    <Button Content="{DynamicResource Mockup.SaveButton}" Click="OnSaveClick"
                             Style="{StaticResource SaveButtonStyle}"
                             Margin="0,28,0,0" HorizontalAlignment="Stretch"/>
 
@@ -211,13 +211,16 @@
 
                     <!-- 도움말 -->
                     <Border Background="#FAFAFA" CornerRadius="10" Padding="12,10" Margin="0,20,0,0">
-                        <TextBlock FontSize="10" Foreground="#86868B" TextWrapping="Wrap" LineHeight="16"
-                                   FontFamily="Segoe UI Variable, Segoe UI, sans-serif">
-                            <Run FontWeight="SemiBold">📋 출력 규격</Run><LineBreak/>
-                            <Run>1080 × 1920 px (Google Play)</Run><LineBreak/>
-                            <Run>DPI 독립적 고해상도 렌더링</Run><LineBreak/>
-                            <Run>바탕화면에 PNG로 저장됩니다</Run>
-                        </TextBlock>
+                        <StackPanel>
+                            <TextBlock Text="{DynamicResource Mockup.SpecTitle}" FontSize="10" FontWeight="SemiBold"
+                                       Foreground="#86868B" FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                            <TextBlock Text="1080 × 1920 px (Google Play)" FontSize="10"
+                                       Foreground="#86868B" FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                            <TextBlock Text="{DynamicResource Mockup.SpecDPI}" FontSize="10"
+                                       Foreground="#86868B" FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                            <TextBlock Text="{DynamicResource Mockup.SpecSavePath}" FontSize="10"
+                                       Foreground="#86868B" FontFamily="Segoe UI Variable, Segoe UI, sans-serif"/>
+                        </StackPanel>
                     </Border>
                 </StackPanel>
             </ScrollViewer>
